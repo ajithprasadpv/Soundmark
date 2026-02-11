@@ -1,0 +1,55 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Sidebar } from '@/components/layout/sidebar';
+import { AudioPlayerBar } from '@/components/layout/audio-player-bar';
+import { useAppState } from '@/lib/store';
+import { mockUser, mockVenues, mockPlaybackStates, mockEnvironmentData, mockSchedules, mockAnalytics, mockMusicLibrary, mockMusicCategories, mockCustomerMappings, mockMusicSources } from '@/lib/mock-data';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { state, dispatch } = useAppState();
+
+  useEffect(() => {
+    const token = localStorage.getItem('ambience_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    if (!state.isAuthenticated) {
+      dispatch({ type: 'SET_USER', payload: mockUser });
+      dispatch({ type: 'SET_AUTHENTICATED', payload: true });
+      dispatch({ type: 'SET_VENUES', payload: mockVenues });
+      dispatch({ type: 'SET_SCHEDULES', payload: mockSchedules });
+      dispatch({ type: 'SET_ANALYTICS', payload: mockAnalytics });
+      dispatch({ type: 'SET_ENVIRONMENT', payload: mockEnvironmentData });
+      dispatch({ type: 'SET_MUSIC_LIBRARY', payload: mockMusicLibrary });
+      dispatch({ type: 'SET_MUSIC_CATEGORIES', payload: mockMusicCategories });
+      dispatch({ type: 'SET_CUSTOMER_MAPPINGS', payload: mockCustomerMappings });
+      dispatch({ type: 'SET_MUSIC_SOURCES', payload: mockMusicSources });
+      Object.entries(mockPlaybackStates).forEach(([venueId, playback]) => {
+        dispatch({ type: 'SET_PLAYBACK', payload: { venueId, state: playback } });
+      });
+    }
+  }, [state.isAuthenticated, router, dispatch]);
+
+  if (!state.isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen noise-bg">
+      <Sidebar />
+      <main className="ml-64 p-8 pb-28">{children}</main>
+      <AudioPlayerBar />
+    </div>
+  );
+}
