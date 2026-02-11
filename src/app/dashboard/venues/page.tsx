@@ -122,7 +122,7 @@ export default function VenuesPage() {
               variant={filter === f ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter(f)}
-              className={filter === f ? 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20' : 'border-white/[0.08] hover:bg-white/[0.04]'}
+              className={filter === f ? 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20' : 'border-border hover:bg-foreground/[0.04]'}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
               {f !== 'all' && (
@@ -150,12 +150,12 @@ export default function VenuesPage() {
             return (
               <Card
                 key={venue.id}
-                className={`cursor-pointer transition-all duration-300 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12] ${
+                className={`cursor-pointer transition-all duration-300 border-border/60 bg-card ${
                   isSelected
                     ? 'border-violet-500/30 shadow-lg shadow-violet-500/[0.05]'
                     : isPlaying
                       ? 'border-violet-500/15 shadow-md shadow-violet-500/[0.03]'
-                      : 'hover:border-white/[0.1]'
+                      : 'hover:border-border'
                 }`}
                 onClick={() => setSelectedVenue(venue.id)}
               >
@@ -164,7 +164,7 @@ export default function VenuesPage() {
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
                       isPlaying
                         ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/30'
-                        : 'bg-white/[0.04]'
+                        : 'bg-foreground/[0.04]'
                     }`}>
                       {isPlaying ? (
                         <div className="flex gap-[3px] items-end h-6">
@@ -178,7 +178,7 @@ export default function VenuesPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold truncate text-white/90">{venue.name}</h3>
+                        <h3 className="font-semibold truncate text-foreground/90">{venue.name}</h3>
                         <Badge variant={venue.status === 'active' ? 'success' : venue.status === 'setup' ? 'warning' : 'outline'} className={venue.status === 'active' && isPlaying ? 'shadow-sm shadow-emerald-400/20' : ''}>
                           {venue.status}
                         </Badge>
@@ -197,7 +197,7 @@ export default function VenuesPage() {
                           size="icon"
                           className={`w-9 h-9 rounded-xl transition-all duration-200 ${
                             isPlaying
-                              ? 'border-white/10 hover:bg-white/[0.06]'
+                              ? 'border-border hover:bg-foreground/[0.06]'
                               : 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/25'
                           }`}
                           onClick={(e) => { e.stopPropagation(); togglePlayback(venue.id); }}
@@ -223,9 +223,9 @@ export default function VenuesPage() {
         {/* Venue Detail Panel */}
         <div>
           {selected ? (
-            <Card className="sticky top-8 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+            <Card className="sticky top-8 border-border/60 bg-card">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-white/90">
+                <CardTitle className="flex items-center gap-2 text-foreground/90">
                   <Settings2 className="w-5 h-5 text-violet-400" />
                   Configuration
                 </CardTitle>
@@ -266,7 +266,7 @@ export default function VenuesPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="sticky top-8 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+            <Card className="sticky top-8 border-border/60 bg-card">
               <CardContent className="p-8 text-center text-muted-foreground/50">
                 <Settings2 className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Select a venue to view its configuration</p>
@@ -279,7 +279,7 @@ export default function VenuesPage() {
       {/* Create Venue Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto border-white/[0.08] bg-gradient-to-br from-[#0e0e18] to-[#0a0a12] shadow-2xl shadow-black/50">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto border-border bg-card shadow-2xl shadow-black/50">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Create New Venue</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)}>
@@ -324,7 +324,7 @@ export default function VenuesPage() {
                       key={g}
                       onClick={() => toggleGenre(g)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                        newVenue.genres.includes(g) ? 'bg-violet-500 text-white shadow-sm shadow-violet-500/30' : 'bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08]'
+                        newVenue.genres.includes(g) ? 'bg-violet-500 text-white shadow-sm shadow-violet-500/30' : 'bg-foreground/[0.04] text-muted-foreground hover:bg-foreground/[0.08]'
                       }`}
                     >
                       {g}

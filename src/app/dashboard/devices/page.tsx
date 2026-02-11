@@ -160,7 +160,7 @@ export default function DevicesPage() {
       {/* Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="border-white/[0.08] text-muted-foreground/70">
+          <Badge variant="outline" className="border-border text-muted-foreground/70">
             {devices.length} device{devices.length !== 1 ? 's' : ''}
           </Badge>
           <Badge variant="outline" className="border-emerald-500/20 text-emerald-400">
@@ -168,7 +168,7 @@ export default function DevicesPage() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchDevices} className="border-white/[0.08] hover:bg-white/[0.04]">
+          <Button variant="outline" size="sm" onClick={fetchDevices} className="border-border hover:bg-foreground/[0.04]">
             <RefreshCw className="w-4 h-4 mr-1.5" /> Refresh
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)} className="bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20">
@@ -187,10 +187,10 @@ export default function DevicesPage() {
             return (
               <Card
                 key={device.id}
-                className={`cursor-pointer transition-all duration-300 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12] ${
+                className={`cursor-pointer transition-all duration-300 border-border/60 bg-card ${
                   isSelected
                     ? 'border-violet-500/30 shadow-lg shadow-violet-500/[0.05]'
-                    : 'hover:border-white/[0.1]'
+                    : 'hover:border-border'
                 }`}
                 onClick={() => setSelectedDevice(device.id)}
               >
@@ -200,7 +200,7 @@ export default function DevicesPage() {
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
                       device.online
                         ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20'
-                        : 'bg-white/[0.04]'
+                        : 'bg-foreground/[0.04]'
                     }`}>
                       <Tv className={`w-6 h-6 ${device.online ? 'text-white' : 'text-muted-foreground/50'}`} />
                     </div>
@@ -208,7 +208,7 @@ export default function DevicesPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold truncate text-white/90">{device.name}</h3>
+                        <h3 className="font-semibold truncate text-foreground/90">{device.name}</h3>
                         <Badge variant={device.online ? 'success' : 'outline'} className={device.online ? 'shadow-sm shadow-emerald-400/20' : ''}>
                           {device.online ? 'Online' : 'Offline'}
                         </Badge>
@@ -273,9 +273,9 @@ export default function DevicesPage() {
         {/* Detail Panel */}
         <div>
           {selected ? (
-            <Card className="sticky top-8 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+            <Card className="sticky top-8 border-border/60 bg-card">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-white/90">
+                <CardTitle className="flex items-center gap-2 text-foreground/90">
                   <Tv className="w-5 h-5 text-violet-400" />
                   {selected.name}
                 </CardTitle>
@@ -286,16 +286,16 @@ export default function DevicesPage() {
               <CardContent className="space-y-5">
                 {/* Status */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+                  <div className="p-3 rounded-xl bg-foreground/[0.03] border border-border">
                     <p className="text-[10px] text-muted-foreground/50 mb-1">Status</p>
                     <div className="flex items-center gap-1.5">
                       <div className={`w-2 h-2 rounded-full ${selected.online ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : 'bg-zinc-600'}`} />
-                      <span className="text-sm font-medium text-white/80">{selected.online ? 'Online' : 'Offline'}</span>
+                      <span className="text-sm font-medium text-foreground/80">{selected.online ? 'Online' : 'Offline'}</span>
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+                  <div className="p-3 rounded-xl bg-foreground/[0.03] border border-border">
                     <p className="text-[10px] text-muted-foreground/50 mb-1">Last Seen</p>
-                    <span className="text-sm font-medium text-white/80">{timeSince(selected.lastHeartbeat)}</span>
+                    <span className="text-sm font-medium text-foreground/80">{timeSince(selected.lastHeartbeat)}</span>
                   </div>
                 </div>
 
@@ -306,7 +306,7 @@ export default function DevicesPage() {
                     <div className="flex items-center justify-between p-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/[0.1]">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-violet-400" />
-                        <span className="text-sm font-medium text-white/80">
+                        <span className="text-sm font-medium text-foreground/80">
                           {venues.find(v => v.id === selected.venueId)?.name || selected.venueId}
                         </span>
                       </div>
@@ -320,10 +320,10 @@ export default function DevicesPage() {
                         <button
                           key={v.id}
                           onClick={() => assignVenue(selected.id, v.id)}
-                          className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.06] hover:border-violet-500/20 transition-all text-left cursor-pointer"
+                          className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-foreground/[0.03] border border-border hover:bg-foreground/[0.06] hover:border-violet-500/20 transition-all text-left cursor-pointer"
                         >
                           <Link className="w-3.5 h-3.5 text-muted-foreground/40" />
-                          <span className="text-sm text-white/70">{v.name}</span>
+                          <span className="text-sm text-foreground/70">{v.name}</span>
                           <span className="text-[10px] text-muted-foreground/40 ml-auto capitalize">{v.venueType}</span>
                         </button>
                       ))}
@@ -335,14 +335,14 @@ export default function DevicesPage() {
                 {selected.online && selected.paired && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground/70 mb-2">Remote Control</p>
-                    <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+                    <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-foreground/[0.03] border border-border">
                       <Button variant="ghost" size="icon" className="w-9 h-9 rounded-xl" onClick={() => sendCommand(selected.id, 'skip_prev')}>
                         <SkipBack className="w-4 h-4 text-muted-foreground" />
                       </Button>
                       {selected.status?.isPlaying ? (
                         <Button
                           size="icon"
-                          className="w-11 h-11 rounded-full bg-white text-black hover:bg-white/90 shadow-lg shadow-white/10"
+                          className="w-11 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-foreground/10"
                           onClick={() => sendCommand(selected.id, 'pause')}
                         >
                           <Pause className="w-5 h-5" />
@@ -350,7 +350,7 @@ export default function DevicesPage() {
                       ) : (
                         <Button
                           size="icon"
-                          className="w-11 h-11 rounded-full bg-white text-black hover:bg-white/90 shadow-lg shadow-white/10"
+                          className="w-11 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-foreground/10"
                           onClick={() => sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient' })}
                         >
                           <Play className="w-5 h-5 ml-0.5" />
@@ -390,13 +390,13 @@ export default function DevicesPage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate text-white/80">{selected.status.trackName}</p>
+                        <p className="text-sm font-medium truncate text-foreground/80">{selected.status.trackName}</p>
                         <p className="text-xs text-muted-foreground/50">{selected.status.artistName || 'Unknown'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground/40 font-mono">
                       <span>{formatTime(selected.status.currentTime)}</span>
-                      <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="flex-1 h-1 bg-foreground/[0.06] rounded-full overflow-hidden">
                         <div
                           className="h-full bg-violet-500/50 rounded-full"
                           style={{ width: `${selected.status.duration ? (selected.status.currentTime / selected.status.duration) * 100 : 0}%` }}
@@ -417,7 +417,7 @@ export default function DevicesPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="sticky top-8 border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+            <Card className="sticky top-8 border-border/60 bg-card">
               <CardContent className="p-8 text-center text-muted-foreground/50">
                 <Tv className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Select a device to manage</p>
@@ -430,29 +430,29 @@ export default function DevicesPage() {
       {/* Create Device Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-          <Card className="w-full max-w-md border-white/[0.08] bg-gradient-to-br from-[#0e0e18] to-[#0a0a12] shadow-2xl shadow-black/50">
+          <Card className="w-full max-w-md border-border/60 bg-card shadow-2xl shadow-black/50">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-white/90">Register New Device</CardTitle>
+              <CardTitle className="text-foreground/90">Register New Device</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)}>
                 <X className="w-4 h-4" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-white/70 mb-1.5 block">Device Name</label>
+                <label className="text-sm font-medium text-foreground/70 mb-1.5 block">Device Name</label>
                 <Input
                   placeholder="e.g. Lobby TV, Cafe Counter Box"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && createDevice()}
-                  className="bg-white/[0.04] border-white/[0.06]"
+                  className="bg-foreground/[0.04] border-border"
                 />
                 <p className="text-[11px] text-muted-foreground/40 mt-1.5">
                   A pairing code will be generated. Enter it on the Android TV box to connect.
                 </p>
               </div>
               <div className="flex gap-3 pt-1">
-                <Button variant="outline" className="flex-1 border-white/[0.08]" onClick={() => setShowCreate(false)}>Cancel</Button>
+                <Button variant="outline" className="flex-1 border-border" onClick={() => setShowCreate(false)}>Cancel</Button>
                 <Button className="flex-1 bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20" onClick={createDevice} disabled={!newName.trim() || loading}>
                   {loading ? 'Creating...' : 'Register Device'}
                 </Button>

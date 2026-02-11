@@ -33,13 +33,13 @@ export default function AnalyticsPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map(stat => (
-          <Card key={stat.label} className="card-glow border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12] overflow-hidden">
+          <Card key={stat.label} className="card-glow border-border/60 bg-card overflow-hidden">
             <CardContent className="p-5 relative">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-violet-500/[0.03] to-transparent rounded-bl-full" />
               <div className="flex items-center justify-between relative">
                 <div>
                   <p className="text-xs text-muted-foreground/80 font-medium tracking-wide">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-1.5 text-white">{stat.value}</p>
+                  <p className="text-2xl font-bold mt-1.5 text-foreground">{stat.value}</p>
                 </div>
                 <div className={`w-11 h-11 rounded-2xl ${stat.bg} flex items-center justify-center`}>
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
@@ -52,9 +52,9 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Daily Playback */}
-        <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
+            <CardTitle className="flex items-center gap-2 text-foreground/90">
               <BarChart3 className="w-5 h-5 text-violet-400" />
               Weekly Playback Hours
             </CardTitle>
@@ -83,9 +83,9 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Genre Distribution */}
-        <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
+            <CardTitle className="flex items-center gap-2 text-foreground/90">
               <Music className="w-5 h-5 text-violet-400" />
               Genre Distribution
             </CardTitle>
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
                   <div key={entry.name} className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                     <span className="text-xs text-muted-foreground/80 truncate">{entry.name}</span>
-                    <span className="text-xs font-medium ml-auto text-white/70 font-mono">{entry.value}%</span>
+                    <span className="text-xs font-medium ml-auto text-foreground/70 font-mono">{entry.value}%</span>
                   </div>
                 ))}
               </div>
@@ -118,9 +118,9 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Hourly Activity */}
-        <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
+            <CardTitle className="flex items-center gap-2 text-foreground/90">
               <TrendingUp className="w-5 h-5 text-violet-400" />
               Hourly Venue Activity
             </CardTitle>
@@ -145,9 +145,9 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Venue Performance */}
-        <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
+            <CardTitle className="flex items-center gap-2 text-foreground/90">
               <Zap className="w-5 h-5 text-violet-400" />
               Venue Performance
             </CardTitle>
@@ -157,10 +157,10 @@ export default function AnalyticsPage() {
               {analytics.venueActivity.map((venue, i) => (
                 <div key={venue.venue}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium truncate text-white/80">{venue.venue}</span>
+                    <span className="text-sm font-medium truncate text-foreground/80">{venue.venue}</span>
                     <span className="text-xs text-muted-foreground/60 font-mono">{venue.hours.toLocaleString(undefined, { maximumFractionDigits: 1 })}h • {venue.tracks.toLocaleString()}</span>
                   </div>
-                  <div className="w-full bg-white/[0.04] rounded-full h-2">
+                  <div className="w-full bg-foreground/[0.04] rounded-full h-2">
                     <div
                       className="h-2 rounded-full transition-all"
                       style={{

@@ -99,13 +99,13 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.label} className="card-glow border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12] overflow-hidden">
+          <Card key={stat.label} className="card-glow border-border/60 bg-card overflow-hidden">
             <CardContent className="p-5 relative">
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-500/[0.04] to-transparent rounded-bl-full" />
               <div className="flex items-center justify-between relative">
                 <div>
                   <p className="text-xs text-muted-foreground/80 font-medium tracking-wide">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-1.5 text-white">{stat.value}</p>
+                  <p className="text-3xl font-bold mt-1.5 text-foreground">{stat.value}</p>
                 </div>
                 <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center backdrop-blur-sm`}>
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
@@ -119,14 +119,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Venues */}
         <div className="lg:col-span-2">
-          <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+          <Card className="border-border/60 bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-white/90">
+              <CardTitle className="flex items-center gap-2 text-foreground/90">
                 <Activity className="w-5 h-5 text-violet-400" />
                 Active Venues
               </CardTitle>
               <Link href="/dashboard/venues">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white">View All</Button>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">View All</Button>
               </Link>
             </CardHeader>
             <CardContent>
@@ -140,14 +140,14 @@ export default function DashboardPage() {
                       className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 ${
                         isPlaying
                           ? 'bg-gradient-to-r from-violet-500/[0.08] to-purple-500/[0.04] border border-violet-500/[0.12] shadow-lg shadow-violet-500/[0.03]'
-                          : 'bg-white/[0.02] hover:bg-white/[0.04] border border-transparent'
+                          : 'bg-foreground/[0.02] hover:bg-foreground/[0.04] border border-transparent'
                       }`}
                     >
                       <div
                         className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                           isPlaying
                             ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/30'
-                            : 'bg-white/[0.06]'
+                            : 'bg-foreground/[0.06]'
                         }`}
                       >
                         {isPlaying ? (
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium truncate text-white/90">{venue.name}</p>
+                          <p className="font-medium truncate text-foreground/90">{venue.name}</p>
                           <Badge variant={isPlaying ? 'success' : 'outline'} className={isPlaying ? 'shadow-sm shadow-emerald-400/20' : 'opacity-60'}>
                             {isPlaying ? 'Playing' : 'Stopped'}
                           </Badge>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
                           onClick={() => togglePlayback(venue.id)}
                           className={`w-9 h-9 rounded-xl transition-all duration-200 ${
                             isPlaying
-                              ? 'border-white/10 hover:bg-white/[0.06]'
+                              ? 'border-border hover:bg-foreground/[0.06]'
                               : 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/25'
                           }`}
                         >
@@ -208,9 +208,9 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Quick Stats */}
-          <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+          <Card className="border-border/60 bg-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white/90">
+              <CardTitle className="flex items-center gap-2 text-foreground/90">
                 <TrendingUp className="w-5 h-5 text-violet-400" />
                 Performance
               </CardTitle>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                     <span className="text-xs text-muted-foreground/50">/5.0</span>
                   </div>
                 </div>
-                <div className="w-full bg-white/[0.04] rounded-full h-2">
+                <div className="w-full bg-foreground/[0.04] rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-emerald-300 h-2 rounded-full transition-all shadow-sm shadow-emerald-400/20"
                     style={{ width: `${((analytics?.avgSatisfactionScore || 0) / 5) * 100}%` }}
@@ -233,12 +233,12 @@ export default function DashboardPage() {
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm text-muted-foreground/80">Peak Hour</span>
-                  <span className="text-sm font-medium text-white/80">{analytics?.peakHour}</span>
+                  <span className="text-sm font-medium text-foreground/80">{analytics?.peakHour}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground/80">Active Venues</span>
-                  <span className="text-sm font-medium text-white/80">{activeVenues.length}/{venues.length}</span>
+                  <span className="text-sm font-medium text-foreground/80">{activeVenues.length}/{venues.length}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -250,9 +250,9 @@ export default function DashboardPage() {
           </Card>
 
           {/* Genre Distribution */}
-          <Card className="border-white/[0.06] bg-gradient-to-br from-[#0c0c14] to-[#0a0a12]">
+          <Card className="border-border/60 bg-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white/90">
+              <CardTitle className="flex items-center gap-2 text-foreground/90">
                 <Waves className="w-5 h-5 text-violet-400" />
                 Top Genres
               </CardTitle>
@@ -262,10 +262,10 @@ export default function DashboardPage() {
                 {analytics?.genreDistribution.slice(0, 5).map((genre, i) => (
                   <div key={genre.genre}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm text-white/80">{genre.genre}</span>
+                      <span className="text-sm text-foreground/80">{genre.genre}</span>
                       <span className="text-xs text-muted-foreground/60 font-mono">{genre.percentage}%</span>
                     </div>
-                    <div className="w-full bg-white/[0.04] rounded-full h-1.5">
+                    <div className="w-full bg-foreground/[0.04] rounded-full h-1.5">
                       <div
                         className="h-1.5 rounded-full transition-all"
                         style={{

@@ -183,7 +183,7 @@ export function AudioPlayerBar() {
     >
       {/* ─── Track Detail Panel ─── */}
       {panelView === 'detail' && npInfo && (
-        <div className="glass border-t border-x border-white/[0.06] rounded-t-2xl mx-4 p-0 animate-slide-up overflow-hidden">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-0 animate-slide-up overflow-hidden">
           <div className="flex">
             {/* Large Album Art */}
             <div className="w-52 h-52 shrink-0 relative">
@@ -194,7 +194,7 @@ export function AudioPlayerBar() {
                   <Waves className="w-16 h-16 text-white/30" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c0c14]/90" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background/90" />
             </div>
 
             {/* Track Info */}
@@ -202,7 +202,7 @@ export function AudioPlayerBar() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-[0.2em] mb-1.5">Now Playing</p>
-                  <h2 className="text-xl font-bold truncate text-white">{trackName}</h2>
+                  <h2 className="text-xl font-bold truncate text-foreground">{trackName}</h2>
                   <p className="text-sm text-muted-foreground/70 mt-0.5">{artistName || 'Unknown Artist'}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -225,29 +225,29 @@ export function AudioPlayerBar() {
 
               {/* Meta Grid */}
               <div className="grid grid-cols-4 gap-3 mt-4">
-                <div className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.04]">
+                <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-0.5">
                     <Tag className="w-3 h-3" /> Genre
                   </div>
                   <p className="text-xs font-medium capitalize">{trackGenre}</p>
                 </div>
-                <div className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.04]">
+                <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
                     <Clock className="w-3 h-3" /> Duration
                   </div>
-                  <p className="text-xs font-medium text-white/80">{formatTime(trackDuration)}</p>
+                  <p className="text-xs font-medium text-foreground/80">{formatTime(trackDuration)}</p>
                 </div>
-                <div className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.04]">
+                <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
                     <Globe className="w-3 h-3" /> Source
                   </div>
-                  <p className="text-xs font-medium text-white/80">{trackSource || 'Unknown'}</p>
+                  <p className="text-xs font-medium text-foreground/80">{trackSource || 'Unknown'}</p>
                 </div>
-                <div className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.04]">
+                <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
                     <Music className="w-3 h-3" /> Venue
                   </div>
-                  <p className="text-xs font-medium truncate text-white/80">{firstVenue?.name || 'Unknown'}</p>
+                  <p className="text-xs font-medium truncate text-foreground/80">{firstVenue?.name || 'Unknown'}</p>
                 </div>
               </div>
 
@@ -272,7 +272,7 @@ export function AudioPlayerBar() {
 
       {/* ─── Streams Panel ─── */}
       {panelView === 'streams' && (
-        <div className="glass border-t border-x border-white/[0.06] rounded-t-2xl mx-4 p-4 animate-slide-up">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-4 animate-slide-up">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <Radio className="w-4 h-4 text-primary" />
@@ -344,7 +344,7 @@ export function AudioPlayerBar() {
 
       {/* ─── Playlists Panel ─── */}
       {panelView === 'playlists' && (
-        <div className="glass border-t border-x border-white/[0.06] rounded-t-2xl mx-4 p-4 animate-slide-up">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-4 animate-slide-up">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <ListMusic className="w-4 h-4 text-primary" />
@@ -460,14 +460,14 @@ export function AudioPlayerBar() {
       )}
 
       {/* ─── Main Bar ─── */}
-      <div className="glass border-t border-white/[0.06]">
+      <div className="glass border-t border-border/60">
         {/* ─── Seek / Progress Bar ─── */}
         <div
           ref={progressRef}
           className="relative h-1 hover:h-2 transition-all cursor-pointer group mx-5"
           onMouseDown={handleSeekStart}
         >
-          <div className="absolute inset-0 bg-white/[0.06] rounded-full" />
+          <div className="absolute inset-0 bg-foreground/[0.06] rounded-full" />
           <div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-[width] duration-150 shadow-sm shadow-violet-500/20"
             style={{ width: `${Math.min(progress, 100)}%` }}
@@ -478,7 +478,7 @@ export function AudioPlayerBar() {
           />
           {isDragging && (
             <div
-              className="absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded-lg bg-[#1a1a2e] border border-white/[0.08] text-[10px] font-mono text-white shadow-xl whitespace-nowrap"
+              className="absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded-lg bg-card border border-border text-[10px] font-mono text-foreground shadow-xl whitespace-nowrap"
               style={{ left: `${Math.min((dragValue / trackDuration) * 100, 100)}%` }}
             >
               {formatTime(dragValue)}
@@ -531,7 +531,7 @@ export function AudioPlayerBar() {
               </Button>
               <Button
                 variant="ghost" size="icon"
-                className="w-10 h-10 rounded-full bg-white text-black hover:bg-white/90 hover:text-black shadow-lg shadow-white/10 hover:shadow-white/20 hover:scale-105 active:scale-95"
+                className="w-10 h-10 rounded-full bg-foreground text-background hover:bg-foreground/90 hover:text-background shadow-lg shadow-foreground/10 hover:shadow-foreground/20 hover:scale-105 active:scale-95"
                 onClick={() => toggleVenuePlayback(firstVenueId)}
                 title={firstPs.isPlaying ? 'Pause' : 'Play'}
               >
