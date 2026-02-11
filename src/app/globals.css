@@ -28,27 +28,27 @@
   --radius-xl: 1rem;
 }
 
-/* ─── Light Theme (Claude-inspired beige) ─── */
+/* ─── Light Theme (Premium warm) ─── */
 .light {
-  --color-background: #faf6f1;
-  --color-foreground: #2d2a26;
-  --color-card: #f5efe8;
-  --color-card-foreground: #2d2a26;
-  --color-popover: #f5efe8;
-  --color-popover-foreground: #2d2a26;
-  --color-primary: #8b5cf6;
+  --color-background: #f5f0eb;
+  --color-foreground: #1c1917;
+  --color-card: #ffffff;
+  --color-card-foreground: #1c1917;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1c1917;
+  --color-primary: #7c3aed;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #ede5da;
-  --color-secondary-foreground: #2d2a26;
-  --color-muted: #ede5da;
-  --color-muted-foreground: #78716c;
-  --color-accent: #8b5cf6;
+  --color-secondary: #f0e9e0;
+  --color-secondary-foreground: #1c1917;
+  --color-muted: #f0e9e0;
+  --color-muted-foreground: #57534e;
+  --color-accent: #7c3aed;
   --color-accent-foreground: #ffffff;
-  --color-destructive: #ef4444;
+  --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e0d6ca;
-  --color-input: #e0d6ca;
-  --color-ring: #8b5cf6;
+  --color-border: #d6cdc2;
+  --color-input: #d6cdc2;
+  --color-ring: #7c3aed;
   --color-success: #16a34a;
   --color-warning: #d97706;
 }
@@ -161,9 +161,10 @@ body {
 }
 
 .light .glass {
-  background: rgba(245, 239, 232, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .dark .glass-subtle {
@@ -173,7 +174,7 @@ body {
 }
 
 .light .glass-subtle {
-  background: rgba(245, 239, 232, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
 }
@@ -212,8 +213,8 @@ body {
 }
 
 .light .card-glow:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(139, 92, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(124, 58, 237, 0.18);
 }
 
 /* ─── Premium Range Input ─── */
@@ -281,4 +282,39 @@ button, a, [role="button"] {
 :focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.5);
   outline-offset: 2px;
+}
+
+/* ─── Light Theme Elevation & Depth ─── */
+.light .light-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: #d6cdc2;
+}
+
+.light .light-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.light aside {
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.07), 1px 0 4px rgba(0, 0, 0, 0.04);
+  border-right-color: #ccc4b8;
+}
+
+.light .gradient-text {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.light ::selection {
+  background: rgba(124, 58, 237, 0.25);
+  color: #1c1917;
+}
+
+.light input[type="range"]::-webkit-slider-runnable-track {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.light input[type="range"]::-webkit-slider-thumb {
+  box-shadow: 0 0 6px rgba(124, 58, 237, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15);
 }
