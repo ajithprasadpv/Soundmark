@@ -12,11 +12,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { state, dispatch } = useAppState();
 
   useEffect(() => {
-    const token = localStorage.getItem('soundmark_token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
     if (!state.isAuthenticated) {
       dispatch({ type: 'SET_USER', payload: mockUser });
       dispatch({ type: 'SET_AUTHENTICATED', payload: true });
