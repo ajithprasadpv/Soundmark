@@ -568,15 +568,16 @@ export function AudioPlayerBar() {
               <Radio className="w-4 h-4" />
             </button>
 
-            {/* Mini Visualizer */}
+            {/* Mini Visualizer — only animate when audio is actually playing */}
             <div className="flex gap-[3px] items-end h-6 mx-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-[3px] bg-gradient-to-t from-violet-500 to-violet-300 rounded-full eq-bar"
+                  className={`w-[3px] bg-gradient-to-t from-violet-500 to-violet-300 rounded-full ${npInfo?.isPlaying ? 'eq-bar' : ''}`}
                   style={{
-                    animationDelay: `${i * 0.1}s`,
-                    animationDuration: `${0.4 + ((i * 7 + 2) % 5) * 0.12}s`,
+                    ...(npInfo?.isPlaying
+                      ? { animationDelay: `${i * 0.1}s`, animationDuration: `${0.4 + ((i * 7 + 2) % 5) * 0.12}s` }
+                      : {}),
                     height: `${20 + ((i * 11 + 3) % 7) * 11}%`,
                   }}
                 />
