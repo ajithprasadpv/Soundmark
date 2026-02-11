@@ -197,7 +197,7 @@ class VenuePlayer {
   }
 }
 
-export class AmbienceAudioEngine {
+export class SoundmarkAudioEngine {
   private players: Map<string, VenuePlayer> = new Map();
   private listeners: Map<string, PlaybackListener> = new Map();
 
@@ -283,11 +283,11 @@ export class AmbienceAudioEngine {
 }
 
 // Singleton instance
-let engineInstance: AmbienceAudioEngine | null = null;
+let engineInstance: SoundmarkAudioEngine | null = null;
 
-export function getAudioEngine(): AmbienceAudioEngine {
+export function getAudioEngine(): SoundmarkAudioEngine {
   if (!engineInstance) {
-    engineInstance = new AmbienceAudioEngine();
+    engineInstance = new SoundmarkAudioEngine();
   }
   return engineInstance;
 }

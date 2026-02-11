@@ -1,7 +1,7 @@
 {
-  "name": "ambience-ai",
+  "name": "soundmark",
   "version": "1.0.0",
-  "description": "AI-Powered Ambient Music Platform",
+  "description": "Soundmark - AI-Powered Ambient Music Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",

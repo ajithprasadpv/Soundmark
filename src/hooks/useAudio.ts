@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getAudioEngine, AmbienceAudioEngine, NowPlayingInfo } from '@/lib/audio-engine-v2';
+import { getAudioEngine, SoundmarkAudioEngine, NowPlayingInfo } from '@/lib/audio-engine-v2';
 
 export function useAudio() {
-  const engineRef = useRef<AmbienceAudioEngine | null>(null);
+  const engineRef = useRef<SoundmarkAudioEngine | null>(null);
   const [nowPlaying, setNowPlaying] = useState<Record<string, NowPlayingInfo>>({});
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, verifyPassword, generateAccessToken, generateRefreshToken } from '@/lib/auth';
 
-const DEMO_EMAIL = 'admin@ambienceai.com';
+const DEMO_EMAIL = 'admin@soundmark.app';
 const DEMO_PASSWORD = 'Admin@123';
 
 export async function POST(request: NextRequest) {

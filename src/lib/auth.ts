@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User, UserRole } from '@/types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ambience-ai-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'soundmark-secret-key-change-in-production';
 const JWT_EXPIRY = '15m';
 const REFRESH_EXPIRY = '30d';
 

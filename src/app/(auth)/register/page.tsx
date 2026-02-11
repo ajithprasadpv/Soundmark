@@ -40,7 +40,7 @@ export default function RegisterPage() {
         return;
       }
 
-      localStorage.setItem('ambience_token', data.data.accessToken);
+      localStorage.setItem('soundmark_token', data.data.accessToken);
       router.push('/dashboard');
     } catch {
       setError('Network error. Please try again.');

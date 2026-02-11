@@ -34,7 +34,7 @@ export default function LandingPage() {
               <Waves className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Ambience AI
+              Soundmark
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -209,11 +209,11 @@ export default function LandingPage() {
               <Waves className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Ambience AI
+              Soundmark
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2026 Ambience AI. All rights reserved.
+            © 2026 Soundmark. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <span className="hover:text-foreground cursor-pointer">Privacy</span>

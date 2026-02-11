@@ -417,7 +417,7 @@ export default function MusicLibraryPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">Artist</label>
-                  <Input placeholder="e.g. Ambience Studio" value={newTrack.artist} onChange={e => setNewTrack({ ...newTrack, artist: e.target.value })} />
+                  <Input placeholder="e.g. Soundmark Studio" value={newTrack.artist} onChange={e => setNewTrack({ ...newTrack, artist: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Genre</label>

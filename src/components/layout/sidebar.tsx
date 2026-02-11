@@ -44,7 +44,7 @@ export function Sidebar() {
   const { state, dispatch } = useAppState();
 
   const handleLogout = () => {
-    localStorage.removeItem('ambience_token');
+    localStorage.removeItem('soundmark_token');
     dispatch({ type: 'LOGOUT' });
     window.location.href = '/login';
   };
@@ -61,7 +61,7 @@ export function Sidebar() {
         </div>
         <div>
           <h1 className="text-lg font-bold gradient-text">
-            Ambience AI
+            Soundmark
           </h1>
           <p className="text-[10px] text-muted-foreground/70 uppercase tracking-[0.15em]">Music Platform</p>
         </div>

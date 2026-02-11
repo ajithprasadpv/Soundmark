@@ -93,7 +93,7 @@ export default function ProofOfPlayPage() {
     doc.setFontSize(9);
     doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 14, 30);
     doc.text('Luxe Hospitality Group', pageWidth - 14, 16, { align: 'right' });
-    doc.text('Powered by Ambience AI', pageWidth - 14, 24, { align: 'right' });
+    doc.text('Powered by Soundmark', pageWidth - 14, 24, { align: 'right' });
 
     // Summary
     doc.setTextColor(60, 60, 60);
@@ -174,7 +174,7 @@ export default function ProofOfPlayPage() {
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
       doc.text(
-        `Ambience AI — Proof of Play — ${selectedReport.month} ${selectedReport.year} — Page ${i} of ${pageCount}`,
+        `Soundmark — Proof of Play — ${selectedReport.month} ${selectedReport.year} — Page ${i} of ${pageCount}`,
         pageWidth / 2, doc.internal.pageSize.getHeight() - 6,
         { align: 'center' }
       );

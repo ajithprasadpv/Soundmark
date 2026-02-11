@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { state, dispatch } = useAppState();
 
   useEffect(() => {
-    const token = localStorage.getItem('ambience_token');
+    const token = localStorage.getItem('soundmark_token');
     if (!token) {
       router.push('/login');
       return;

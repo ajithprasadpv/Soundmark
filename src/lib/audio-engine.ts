@@ -205,7 +205,7 @@ function createReverb(ctx: AudioContext, decay: number): ConvolverNode {
   return convolver;
 }
 
-export class AmbienceAudioEngine {
+export class SoundmarkAudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private activeVenues: Map<string, VenueAudioSession> = new Map();
@@ -511,11 +511,11 @@ class VenueAudioSession {
 }
 
 // Singleton instance
-let engineInstance: AmbienceAudioEngine | null = null;
+let engineInstance: SoundmarkAudioEngine | null = null;
 
-export function getAudioEngine(): AmbienceAudioEngine {
+export function getAudioEngine(): SoundmarkAudioEngine {
   if (!engineInstance) {
-    engineInstance = new AmbienceAudioEngine();
+    engineInstance = new SoundmarkAudioEngine();
   }
   return engineInstance;
 }

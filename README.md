@@ -1,4 +1,4 @@
-# Ambience AI - AI-Powered Ambient Music Platform
+# Soundmark - AI-Powered Ambient Music Platform
 
 A production-ready, full-stack web application for generating real-time, context-aware ambient music for commercial venues. Built with Next.js, TypeScript, and TailwindCSS.
 
@@ -42,7 +42,7 @@ npm start
 
 ## Demo Credentials
 
-- **Email:** admin@ambienceai.com
+- **Email:** admin@soundmark.app
 - **Password:** Admin@123
 
 ## Project Structure

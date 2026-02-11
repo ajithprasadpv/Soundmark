@@ -35,7 +35,7 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem('ambience_token', data.data.accessToken);
+      localStorage.setItem('soundmark_token', data.data.accessToken);
       router.push('/dashboard');
     } catch {
       setError('Network error. Please try again.');
@@ -58,7 +58,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Ambience AI account</CardDescription>
+          <CardDescription>Sign in to your Soundmark account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -126,7 +126,7 @@ export default function LoginPage() {
             </div>
 
             <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-              <p><strong>Email:</strong> admin@ambienceai.com</p>
+              <p><strong>Email:</strong> admin@soundmark.app</p>
               <p><strong>Password:</strong> Admin@123</p>
             </div>
           </form>

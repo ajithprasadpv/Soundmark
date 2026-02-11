@@ -3,7 +3,7 @@ import { AppProvider } from '@/components/providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Ambience AI - AI-Powered Ambient Music Platform',
+  title: 'Soundmark - AI-Powered Ambient Music Platform',
   description: 'Real-time, context-aware music generation for commercial venues',
 };
 
