@@ -6,6 +6,7 @@ frontend:
         - npm ci
     build:
       commands:
+        - env | grep -e _BUILD_ -e _BRANCH || true
         - npm run build
   artifacts:
     baseDirectory: .next
