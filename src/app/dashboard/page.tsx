@@ -113,6 +113,9 @@ export default function DashboardPage() {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistPlaying, setPlaylistPlaying] = useState<string | null>(null);
   const [playlistAudio, setPlaylistAudio] = useState<HTMLAudioElement | null>(null);
+  const [playlistProgress, setPlaylistProgress] = useState(0);
+  const [playlistDuration, setPlaylistDuration] = useState(0);
+  const [playlistCurrentTime, setPlaylistCurrentTime] = useState(0);
 
   // Load real analytics from localStorage on mount & refresh every 30s
   useEffect(() => {
@@ -288,10 +291,18 @@ export default function DashboardPage() {
     if (playlistPlaying === track.key) {
       setPlaylistPlaying(null);
       setPlaylistAudio(null);
+      setPlaylistProgress(0);
+      setPlaylistCurrentTime(0);
+      setPlaylistDuration(0);
       return;
     }
     const el = new Audio(track.streamUrl);
     el.volume = 0.8;
+    el.onloadedmetadata = () => setPlaylistDuration(el.duration);
+    el.ontimeupdate = () => {
+      setPlaylistCurrentTime(el.currentTime);
+      setPlaylistProgress(el.duration ? (el.currentTime / el.duration) * 100 : 0);
+    };
     el.onended = () => {
       const dur = Math.round(el.duration || 0);
       if (dur > 2) {
@@ -310,6 +321,9 @@ export default function DashboardPage() {
       } else {
         setPlaylistPlaying(null);
         setPlaylistAudio(null);
+        setPlaylistProgress(0);
+        setPlaylistCurrentTime(0);
+        setPlaylistDuration(0);
       }
     };
     el.play();
@@ -708,7 +722,19 @@ export default function DashboardPage() {
               {/* Auto Playlist */}
               {autoPlaylist.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Your Playlist ({autoPlaylist.length} tracks)</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Your Playlist ({autoPlaylist.length} tracks)</p>
+                    {playlistPlaying && (
+                      <button
+                        onClick={() => {
+                          if (playlistAudio) { playlistAudio.pause(); playlistAudio.src = ''; }
+                          setPlaylistPlaying(null); setPlaylistAudio(null);
+                          setPlaylistProgress(0); setPlaylistCurrentTime(0); setPlaylistDuration(0);
+                        }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+                      >Stop</button>
+                    )}
+                  </div>
                   <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
                     {autoPlaylist.map((track, idx) => {
                       const isPlaying = playlistPlaying === track.key;
@@ -741,6 +767,46 @@ export default function DashboardPage() {
                       );
                     })}
                   </div>
+
+                  {/* Mini Player Bar */}
+                  {playlistPlaying && playlistAudio && (() => {
+                    const currentTrack = autoPlaylist.find(t => t.key === playlistPlaying);
+                    if (!currentTrack) return null;
+                    const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+                    return (
+                      <div className="mt-2 p-2.5 rounded-xl bg-gradient-to-r from-violet-500/[0.08] to-purple-500/[0.04] border border-violet-500/[0.12]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <button
+                            onClick={() => playPlaylistTrack(currentTrack)}
+                            className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center shrink-0 shadow-sm shadow-violet-500/30 cursor-pointer"
+                          >
+                            <Pause className="w-3.5 h-3.5 text-white" />
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate text-violet-400">{currentTrack.title}</p>
+                            <p className="text-[10px] text-muted-foreground/60 truncate">{currentTrack.artist !== 'Unknown' ? currentTrack.artist : currentTrack.genre}</p>
+                          </div>
+                          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                            {fmtTime(playlistCurrentTime)} / {fmtTime(playlistDuration)}
+                          </span>
+                        </div>
+                        <div
+                          className="w-full h-1.5 bg-foreground/[0.06] rounded-full cursor-pointer"
+                          onClick={(e) => {
+                            if (!playlistAudio || !playlistDuration) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pct = (e.clientX - rect.left) / rect.width;
+                            playlistAudio.currentTime = pct * playlistDuration;
+                          }}
+                        >
+                          <div
+                            className="h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-400 transition-all duration-200"
+                            style={{ width: `${playlistProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </CardContent>
