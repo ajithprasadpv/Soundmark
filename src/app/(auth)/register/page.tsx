@@ -73,74 +73,84 @@ export default function RegisterPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
+              <label htmlFor="reg-name" className="text-sm font-medium">Full Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
+                  id="reg-name"
                   placeholder="John Doe"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="pl-10"
                   required
+                  autoComplete="name"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <label htmlFor="reg-email" className="text-sm font-medium">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
+                  id="reg-email"
                   type="email"
                   placeholder="you@example.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="pl-10"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Organization</label>
+              <label htmlFor="reg-org" className="text-sm font-medium">Organization</label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
+                  id="reg-org"
                   placeholder="Your company name"
                   value={form.organization}
                   onChange={(e) => setForm({ ...form, organization: e.target.value })}
                   className="pl-10"
                   required
+                  autoComplete="organization"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
+              <label htmlFor="reg-password" className="text-sm font-medium">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
+                  id="reg-password"
                   type="password"
                   placeholder="Min 8 chars, 1 upper, 1 number, 1 special"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="pl-10"
                   required
+                  autoComplete="new-password"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Confirm Password</label>
+              <label htmlFor="reg-confirm-password" className="text-sm font-medium">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
+                  id="reg-confirm-password"
                   type="password"
                   placeholder="Confirm your password"
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                   className="pl-10"
                   required
+                  autoComplete="new-password"
                 />
               </div>
             </div>

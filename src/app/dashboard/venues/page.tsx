@@ -180,7 +180,10 @@ export default function VenuesPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold truncate text-foreground/90">{venue.name}</h3>
                         <Badge variant={venue.status === 'active' ? 'success' : venue.status === 'setup' ? 'warning' : 'outline'} className={venue.status === 'active' && isPlaying ? 'shadow-sm shadow-emerald-400/20' : ''}>
-                          {venue.status}
+                          <span className="flex items-center gap-1">
+                            <span className={`w-1.5 h-1.5 rounded-full ${venue.status === 'active' ? 'bg-current' : venue.status === 'setup' ? 'border border-current' : 'border border-current'}`} aria-hidden="true" />
+                            {venue.status}
+                          </span>
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground/60">{venue.address}, {venue.city}</p>
@@ -195,6 +198,7 @@ export default function VenuesPage() {
                         <Button
                           variant={isPlaying ? 'outline' : 'default'}
                           size="icon"
+                          aria-label={isPlaying ? `Pause ${venue.name}` : `Play ${venue.name}`}
                           className={`w-9 h-9 rounded-xl transition-all duration-200 ${
                             isPlaying
                               ? 'border-border hover:bg-foreground/[0.06]'
@@ -202,7 +206,7 @@ export default function VenuesPage() {
                           }`}
                           onClick={(e) => { e.stopPropagation(); togglePlayback(venue.id); }}
                         >
-                          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          {isPlaying ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4" aria-hidden="true" />}
                         </Button>
                       )}
                       <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
@@ -229,8 +233,8 @@ export default function VenuesPage() {
                   <Settings2 className="w-5 h-5 text-violet-400" />
                   Configuration
                 </CardTitle>
-                <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => deleteVenueWithStop(selected.id)}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
+                <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => deleteVenueWithStop(selected.id)} aria-label={`Delete venue ${selected.name}`}>
+                  <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
                 </Button>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -282,37 +286,37 @@ export default function VenuesPage() {
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto border-border bg-card shadow-2xl shadow-black/50">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Create New Venue</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)}>
-                <X className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)} aria-label="Close dialog">
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className="text-sm font-medium">Venue Name</label>
-                  <Input placeholder="e.g. The Grand Lounge" value={newVenue.name} onChange={e => setNewVenue({ ...newVenue, name: e.target.value })} />
+                  <label htmlFor="venue-name" className="text-sm font-medium">Venue Name</label>
+                  <Input id="venue-name" placeholder="e.g. The Grand Lounge" value={newVenue.name} onChange={e => setNewVenue({ ...newVenue, name: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Type</label>
-                  <Select value={newVenue.venueType} onChange={e => setNewVenue({ ...newVenue, venueType: e.target.value as VenueType })}>
+                  <label htmlFor="venue-type" className="text-sm font-medium">Type</label>
+                  <Select id="venue-type" value={newVenue.venueType} onChange={e => setNewVenue({ ...newVenue, venueType: e.target.value as VenueType })}>
                     {venueTypes.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Country</label>
-                  <Input value={newVenue.country} onChange={e => setNewVenue({ ...newVenue, country: e.target.value })} />
+                  <label htmlFor="venue-country" className="text-sm font-medium">Country</label>
+                  <Input id="venue-country" value={newVenue.country} onChange={e => setNewVenue({ ...newVenue, country: e.target.value })} />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-sm font-medium">Address</label>
-                  <Input placeholder="Street address" value={newVenue.address} onChange={e => setNewVenue({ ...newVenue, address: e.target.value })} />
+                  <label htmlFor="venue-address" className="text-sm font-medium">Address</label>
+                  <Input id="venue-address" placeholder="Street address" value={newVenue.address} onChange={e => setNewVenue({ ...newVenue, address: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">City</label>
-                  <Input value={newVenue.city} onChange={e => setNewVenue({ ...newVenue, city: e.target.value })} />
+                  <label htmlFor="venue-city" className="text-sm font-medium">City</label>
+                  <Input id="venue-city" value={newVenue.city} onChange={e => setNewVenue({ ...newVenue, city: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">State</label>
-                  <Input value={newVenue.state} onChange={e => setNewVenue({ ...newVenue, state: e.target.value })} />
+                  <label htmlFor="venue-state" className="text-sm font-medium">State</label>
+                  <Input id="venue-state" value={newVenue.state} onChange={e => setNewVenue({ ...newVenue, state: e.target.value })} />
                 </div>
               </div>
 

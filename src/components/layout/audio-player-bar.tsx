@@ -3,9 +3,11 @@
 import { useState, useRef } from 'react';
 import { useAppState } from '@/lib/store';
 import { useAudio } from '@/hooks/useAudio';
+import { useSidebar } from '@/components/sidebar-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FavoriteTrack } from '@/types';
+import { cn } from '@/lib/utils';
 import {
   Play, Pause, SkipForward, SkipBack, Volume2,
   Radio, StopCircle, Waves, Loader2, Heart,
@@ -19,6 +21,7 @@ export function AudioPlayerBar() {
   const { state, dispatch } = useAppState();
   const { venues, playbackStates, favorites, playlists } = state;
   const audio = useAudio();
+  const { isCollapsed, isMobile } = useSidebar();
   const [panelView, setPanelView] = useState<PanelView>('none');
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
@@ -50,6 +53,9 @@ export function AudioPlayerBar() {
   // Derive a stable track ID from now-playing info
   const currentTrackId = npInfo ? `${trackSource}-${trackName}-${artistName}`.replace(/\s+/g, '-').toLowerCase() : '';
   const isFavorited = favorites.some(f => f.trackId === currentTrackId);
+
+  // Compute responsive left offset
+  const leftOffset = isMobile ? 'left-0' : isCollapsed ? 'left-[72px]' : 'left-64';
 
   const toggleFavorite = () => {
     if (!npInfo) return;
@@ -176,76 +182,80 @@ export function AudioPlayerBar() {
 
   return (
     <div
-      className="fixed bottom-0 left-64 right-0 z-50"
+      className={cn('fixed bottom-0 right-0 z-50 transition-all duration-300', leftOffset)}
+      role="region"
+      aria-label="Audio player"
       onMouseMove={(e) => isDragging && updateSeekPosition(e)}
       onMouseUp={handleSeekEnd}
       onMouseLeave={handleSeekEnd}
     >
       {/* ─── Track Detail Panel ─── */}
       {panelView === 'detail' && npInfo && (
-        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-0 animate-slide-up overflow-hidden">
-          <div className="flex">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-2 sm:mx-4 p-0 animate-slide-up overflow-hidden">
+          <div className="flex flex-col sm:flex-row">
             {/* Large Album Art */}
-            <div className="w-52 h-52 shrink-0 relative">
+            <div className="w-full sm:w-52 h-40 sm:h-52 shrink-0 relative">
               {albumImage ? (
-                <img src={albumImage} alt="" className="w-full h-full object-cover" />
+                <img src={albumImage} alt={`Album art for ${trackName}`} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-                  <Waves className="w-16 h-16 text-white/30" />
+                  <Waves className="w-16 h-16 text-white/30" aria-hidden="true" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background/90" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background/90 hidden sm:block" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent sm:hidden" />
             </div>
 
             {/* Track Info */}
-            <div className="flex-1 p-5 min-w-0">
+            <div className="flex-1 p-4 sm:p-5 min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-[0.2em] mb-1.5">Now Playing</p>
-                  <h2 className="text-xl font-bold truncate text-foreground">{trackName}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold truncate text-foreground">{trackName}</h2>
                   <p className="text-sm text-muted-foreground/70 mt-0.5">{artistName || 'Unknown Artist'}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={toggleFavorite}
                     className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFavorited ? 'bg-red-500/20 text-red-400 scale-110' : 'hover:bg-muted text-muted-foreground'}`}
-                    title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-pressed={isFavorited}
                   >
-                    <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
+                    <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => { setAddToPlaylistTrackId(currentTrackId); togglePanel('playlists'); }}
                     className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-                    title="Add to playlist"
+                    aria-label="Add to playlist"
                   >
-                    <ListMusic className="w-5 h-5" />
+                    <ListMusic className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
 
               {/* Meta Grid */}
-              <div className="grid grid-cols-4 gap-3 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4">
                 <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-0.5">
-                    <Tag className="w-3 h-3" /> Genre
+                    <Tag className="w-3 h-3" aria-hidden="true" /> Genre
                   </div>
                   <p className="text-xs font-medium capitalize">{trackGenre}</p>
                 </div>
                 <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
-                    <Clock className="w-3 h-3" /> Duration
+                    <Clock className="w-3 h-3" aria-hidden="true" /> Duration
                   </div>
                   <p className="text-xs font-medium text-foreground/80">{formatTime(trackDuration)}</p>
                 </div>
                 <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
-                    <Globe className="w-3 h-3" /> Source
+                    <Globe className="w-3 h-3" aria-hidden="true" /> Source
                   </div>
                   <p className="text-xs font-medium text-foreground/80">{trackSource || 'Unknown'}</p>
                 </div>
                 <div className="p-2 rounded-xl bg-foreground/[0.04] border border-foreground/[0.04]">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 mb-0.5">
-                    <Music className="w-3 h-3" /> Venue
+                    <Music className="w-3 h-3" aria-hidden="true" /> Venue
                   </div>
                   <p className="text-xs font-medium truncate text-foreground/80">{firstVenue?.name || 'Unknown'}</p>
                 </div>
@@ -254,14 +264,14 @@ export function AudioPlayerBar() {
               {/* Favorites count */}
               <div className="mt-3 flex items-center gap-4 text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Heart className="w-3 h-3" /> {favorites.length} favorites
+                  <Heart className="w-3 h-3" aria-hidden="true" /> {favorites.length} favorites
                 </span>
                 <span className="flex items-center gap-1">
-                  <ListMusic className="w-3 h-3" /> {playlists.length} playlists
+                  <ListMusic className="w-3 h-3" aria-hidden="true" /> {playlists.length} playlists
                 </span>
                 {isFavorited && (
                   <span className="text-red-400 flex items-center gap-1">
-                    <Heart className="w-3 h-3 fill-current" /> In your favorites
+                    <Heart className="w-3 h-3 fill-current" aria-hidden="true" /> In your favorites
                   </span>
                 )}
               </div>
@@ -272,14 +282,14 @@ export function AudioPlayerBar() {
 
       {/* ─── Streams Panel ─── */}
       {panelView === 'streams' && (
-        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-4 animate-slide-up">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-2 sm:mx-4 p-4 animate-slide-up">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Radio className="w-4 h-4 text-primary" />
+              <Radio className="w-4 h-4 text-primary" aria-hidden="true" />
               Active Streams ({playingCount})
             </h3>
-            <Button variant="ghost" size="sm" onClick={stopAll} className="text-destructive hover:text-destructive">
-              <StopCircle className="w-4 h-4 mr-1" /> Stop All
+            <Button variant="ghost" size="sm" onClick={stopAll} className="text-destructive hover:text-destructive" aria-label="Stop all streams">
+              <StopCircle className="w-4 h-4 mr-1" aria-hidden="true" /> Stop All
             </Button>
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -294,7 +304,7 @@ export function AudioPlayerBar() {
                     <img src={np.albumImage} alt="" className="w-8 h-8 rounded shrink-0 object-cover" />
                   ) : (
                     <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                      <Waves className="w-4 h-4 text-primary" />
+                      <Waves className="w-4 h-4 text-primary" aria-hidden="true" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -315,25 +325,29 @@ export function AudioPlayerBar() {
                       dispatch({ type: 'TOGGLE_FAVORITE', payload: fav });
                     }}
                     className={`w-6 h-6 flex items-center justify-center rounded cursor-pointer ${npIsFav ? 'text-red-400' : 'text-muted-foreground hover:text-red-400'}`}
+                    aria-label={npIsFav ? `Remove ${np?.trackName || 'track'} from favorites` : `Add ${np?.trackName || 'track'} to favorites`}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${npIsFav ? 'fill-current' : ''}`} />
+                    <Heart className={`w-3.5 h-3.5 ${npIsFav ? 'fill-current' : ''}`} aria-hidden="true" />
                   </button>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => audio.previousTrack(venueId)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted cursor-pointer">
-                      <SkipBack className="w-3 h-3 text-muted-foreground" />
+                    <button onClick={() => audio.previousTrack(venueId)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted cursor-pointer" aria-label="Previous track">
+                      <SkipBack className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
                     </button>
-                    <button onClick={() => audio.nextTrack(venueId)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted cursor-pointer">
-                      <SkipForward className="w-3 h-3 text-muted-foreground" />
+                    <button onClick={() => audio.nextTrack(venueId)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted cursor-pointer" aria-label="Next track">
+                      <SkipForward className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 w-28">
-                    <Volume2 className="w-3 h-3 text-muted-foreground" />
+                  <div className="hidden sm:flex items-center gap-2 shrink-0 w-28">
+                    <Volume2 className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                    <label className="sr-only" htmlFor={`vol-stream-${venueId}`}>Volume for {venue?.name || 'venue'}</label>
                     <input
+                      id={`vol-stream-${venueId}`}
                       type="range" min={0} max={100} value={ps.volume}
                       onChange={(e) => changeVolume(venueId, Number(e.target.value))}
                       className="w-full h-1 rounded-full appearance-none cursor-pointer bg-muted [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                      aria-label={`Volume: ${ps.volume}%`}
                     />
-                    <span className="text-[10px] text-muted-foreground w-7 text-right">{ps.volume}%</span>
+                    <span className="text-[10px] text-muted-foreground w-7 text-right" aria-hidden="true">{ps.volume}%</span>
                   </div>
                 </div>
               );
@@ -344,21 +358,23 @@ export function AudioPlayerBar() {
 
       {/* ─── Playlists Panel ─── */}
       {panelView === 'playlists' && (
-        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-4 p-4 animate-slide-up">
+        <div className="glass border-t border-x border-border/60 rounded-t-2xl mx-2 sm:mx-4 p-4 animate-slide-up">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <ListMusic className="w-4 h-4 text-primary" />
+              <ListMusic className="w-4 h-4 text-primary" aria-hidden="true" />
               Playlists
             </h3>
-            <Button variant="ghost" size="sm" onClick={() => setShowNewPlaylist(!showNewPlaylist)}>
-              <Plus className="w-4 h-4 mr-1" /> New Playlist
+            <Button variant="ghost" size="sm" onClick={() => setShowNewPlaylist(!showNewPlaylist)} aria-label="Create new playlist">
+              <Plus className="w-4 h-4 mr-1" aria-hidden="true" /> New Playlist
             </Button>
           </div>
 
           {/* Create new playlist */}
           {showNewPlaylist && (
             <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-muted/50">
+              <label className="sr-only" htmlFor="new-playlist-name">Playlist name</label>
               <Input
+                id="new-playlist-name"
                 placeholder="Playlist name..."
                 value={newPlaylistName}
                 onChange={(e) => setNewPlaylistName(e.target.value)}
@@ -366,11 +382,11 @@ export function AudioPlayerBar() {
                 className="h-8 text-xs bg-transparent border-0 focus-visible:ring-0"
                 autoFocus
               />
-              <button onClick={createPlaylist} className="w-7 h-7 rounded flex items-center justify-center bg-primary text-primary-foreground cursor-pointer shrink-0">
-                <Check className="w-3.5 h-3.5" />
+              <button onClick={createPlaylist} className="w-7 h-7 rounded flex items-center justify-center bg-primary text-primary-foreground cursor-pointer shrink-0" aria-label="Confirm create playlist">
+                <Check className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
-              <button onClick={() => { setShowNewPlaylist(false); setNewPlaylistName(''); }} className="w-7 h-7 rounded flex items-center justify-center hover:bg-muted cursor-pointer shrink-0">
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              <button onClick={() => { setShowNewPlaylist(false); setNewPlaylistName(''); }} className="w-7 h-7 rounded flex items-center justify-center hover:bg-muted cursor-pointer shrink-0" aria-label="Cancel create playlist">
+                <X className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -378,7 +394,7 @@ export function AudioPlayerBar() {
           {/* Favorites section */}
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-3.5 h-3.5 text-red-400" />
+              <Heart className="w-3.5 h-3.5 text-red-400" aria-hidden="true" />
               <span className="text-xs font-medium">Favorites ({favorites.length})</span>
             </div>
             {favorites.length === 0 ? (
@@ -391,7 +407,7 @@ export function AudioPlayerBar() {
                       <img src={fav.albumImage} alt="" className="w-5 h-5 rounded shrink-0 object-cover" />
                     ) : (
                       <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                        <Music className="w-3 h-3 text-primary" />
+                        <Music className="w-3 h-3 text-primary" aria-hidden="true" />
                       </div>
                     )}
                     <span className="text-[10px] truncate flex-1">{fav.trackName}</span>
@@ -399,8 +415,9 @@ export function AudioPlayerBar() {
                     <button
                       onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', payload: fav })}
                       className="w-5 h-5 flex items-center justify-center text-red-400 cursor-pointer"
+                      aria-label={`Remove ${fav.trackName} from favorites`}
                     >
-                      <Heart className="w-3 h-3 fill-current" />
+                      <Heart className="w-3 h-3 fill-current" aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -414,7 +431,7 @@ export function AudioPlayerBar() {
           {/* Playlists list */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <ListMusic className="w-3.5 h-3.5 text-primary" />
+              <ListMusic className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               <span className="text-xs font-medium">Custom Playlists ({playlists.length})</span>
             </div>
             {playlists.length === 0 ? (
@@ -426,7 +443,7 @@ export function AudioPlayerBar() {
                   return (
                     <div key={pl.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                       <div className="w-8 h-8 rounded bg-gradient-to-br from-primary/20 to-purple-400/20 flex items-center justify-center shrink-0">
-                        <ListMusic className="w-4 h-4 text-primary" />
+                        <ListMusic className="w-4 h-4 text-primary" aria-hidden="true" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{pl.name}</p>
@@ -436,19 +453,21 @@ export function AudioPlayerBar() {
                         <button
                           onClick={() => addToPlaylist(pl.id)}
                           className={`px-2 py-1 rounded text-[10px] font-medium cursor-pointer transition-colors ${hasTrack ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
+                          aria-label={hasTrack ? `Remove current track from ${pl.name}` : `Add current track to ${pl.name}`}
                         >
                           {hasTrack ? (
-                            <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Added</span>
+                            <span className="flex items-center gap-1"><Check className="w-3 h-3" aria-hidden="true" /> Added</span>
                           ) : (
-                            <span className="flex items-center gap-1"><Plus className="w-3 h-3" /> Add</span>
+                            <span className="flex items-center gap-1"><Plus className="w-3 h-3" aria-hidden="true" /> Add</span>
                           )}
                         </button>
                       )}
                       <button
                         onClick={() => dispatch({ type: 'DELETE_PLAYLIST', payload: pl.id })}
                         className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive cursor-pointer"
+                        aria-label={`Delete playlist ${pl.name}`}
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   );
@@ -464,8 +483,15 @@ export function AudioPlayerBar() {
         {/* ─── Seek / Progress Bar ─── */}
         <div
           ref={progressRef}
-          className="relative h-1 hover:h-2 transition-all cursor-pointer group mx-5"
+          className="relative h-1 hover:h-2 transition-all cursor-pointer group mx-3 sm:mx-5"
           onMouseDown={handleSeekStart}
+          role="slider"
+          aria-label="Seek through track"
+          aria-valuemin={0}
+          aria-valuemax={Math.floor(trackDuration)}
+          aria-valuenow={Math.floor(currentTime)}
+          aria-valuetext={`${formatTime(currentTime)} of ${formatTime(trackDuration)}`}
+          tabIndex={0}
         >
           <div className="absolute inset-0 bg-foreground/[0.06] rounded-full" />
           <div
@@ -486,25 +512,26 @@ export function AudioPlayerBar() {
           )}
         </div>
 
-        <div className="px-5 py-2">
-        <div className="flex items-center gap-4">
+        <div className="px-3 sm:px-5 py-2">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Track info — click opens detail panel */}
           <button
             onClick={() => togglePanel('detail')}
-            className="flex items-center gap-3 w-60 min-w-0 cursor-pointer text-left shrink-0"
+            className="flex items-center gap-2 sm:gap-3 w-40 sm:w-60 min-w-0 cursor-pointer text-left shrink-0"
+            aria-label={`Now playing: ${trackName} by ${artistName || 'unknown artist'}. Click for details.`}
           >
             {albumImage ? (
-              <img src={albumImage} alt="" className="w-12 h-12 rounded-xl shrink-0 object-cover shadow-lg shadow-black/40" />
+              <img src={albumImage} alt="" className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl shrink-0 object-cover shadow-lg shadow-black/40" />
             ) : (
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/20">
-                {isLoading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Waves className="w-5 h-5 text-white/80" />}
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/20">
+                {isLoading ? <Loader2 className="w-5 h-5 text-white animate-spin" aria-hidden="true" /> : <Waves className="w-5 h-5 text-white/80" aria-hidden="true" />}
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">
+              <p className="text-xs sm:text-sm font-medium truncate">
                 {playingCount === 1 ? trackName : `${playingCount} venues playing`}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                 {playingCount === 1
                   ? (artistName
                     ? `${artistName}${trackSource ? ` • via ${trackSource}` : ''}`
@@ -517,28 +544,29 @@ export function AudioPlayerBar() {
           {/* Favorite button */}
           <button
             onClick={toggleFavorite}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${isFavorited ? 'text-red-400 scale-110' : 'text-muted-foreground hover:text-red-400'}`}
-            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center transition-all cursor-pointer shrink-0 ${isFavorited ? 'text-red-400 scale-110' : 'text-muted-foreground hover:text-red-400'}`}
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={isFavorited}
           >
-            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} aria-hidden="true" />
           </button>
 
           {/* Center: Playback Controls */}
-          <div className="flex-1 flex flex-col items-center gap-1">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => audio.previousTrack(firstVenueId)} title="Previous track">
-                <SkipBack className="w-4 h-4 text-muted-foreground" />
+          <div className="flex-1 flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button variant="ghost" size="icon" className="w-7 h-7 sm:w-8 sm:h-8" onClick={() => audio.previousTrack(firstVenueId)} aria-label="Previous track">
+                <SkipBack className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost" size="icon"
-                className="w-10 h-10 rounded-full bg-foreground text-background hover:bg-foreground/90 hover:text-background shadow-lg shadow-foreground/10 hover:shadow-foreground/20 hover:scale-105 active:scale-95"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-foreground text-background hover:bg-foreground/90 hover:text-background shadow-lg shadow-foreground/10 hover:shadow-foreground/20 hover:scale-105 active:scale-95"
                 onClick={() => toggleVenuePlayback(firstVenueId)}
-                title={firstPs.isPlaying ? 'Pause' : 'Play'}
+                aria-label={firstPs.isPlaying ? 'Pause playback' : 'Resume playback'}
               >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : firstPs.isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                {isLoading ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" aria-hidden="true" /> : firstPs.isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" aria-hidden="true" />}
               </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => audio.nextTrack(firstVenueId)} title="Next track">
-                <SkipForward className="w-4 h-4 text-muted-foreground" />
+              <Button variant="ghost" size="icon" className="w-7 h-7 sm:w-8 sm:h-8" onClick={() => audio.nextTrack(firstVenueId)} aria-label="Next track">
+                <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" aria-hidden="true" />
               </Button>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
@@ -549,27 +577,29 @@ export function AudioPlayerBar() {
           </div>
 
           {/* Right: Actions + Volume + Stop */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Playlist button */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Playlist button — hidden on very small screens */}
             <button
               onClick={() => togglePanel('playlists')}
-              className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors ${panelView === 'playlists' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-              title="Playlists"
+              className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center cursor-pointer transition-colors ${panelView === 'playlists' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+              aria-label="Playlists"
+              aria-expanded={panelView === 'playlists'}
             >
-              <ListMusic className="w-4 h-4" />
+              <ListMusic className="w-4 h-4" aria-hidden="true" />
             </button>
 
             {/* Streams button */}
             <button
               onClick={() => togglePanel('streams')}
-              className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors ${panelView === 'streams' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-              title="Active streams"
+              className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center cursor-pointer transition-colors ${panelView === 'streams' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+              aria-label="Active streams"
+              aria-expanded={panelView === 'streams'}
             >
-              <Radio className="w-4 h-4" />
+              <Radio className="w-4 h-4" aria-hidden="true" />
             </button>
 
-            {/* Mini Visualizer — only animate when audio is actually playing */}
-            <div className="flex gap-[3px] items-end h-6 mx-2">
+            {/* Mini Visualizer — hidden on mobile */}
+            <div className="hidden md:flex gap-[3px] items-end h-6 mx-2" aria-hidden="true">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
@@ -584,13 +614,16 @@ export function AudioPlayerBar() {
               ))}
             </div>
 
-            {/* Volume */}
-            <div className="flex items-center gap-1.5 w-28">
-              <Volume2 className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+            {/* Volume — hidden on small screens */}
+            <div className="hidden md:flex items-center gap-1.5 w-28">
+              <Volume2 className="w-4 h-4 text-muted-foreground/60 shrink-0" aria-hidden="true" />
+              <label className="sr-only" htmlFor="main-volume">Main volume</label>
               <input
+                id="main-volume"
                 type="range" min={0} max={100} value={firstPs.volume}
                 onChange={(e) => changeVolume(firstVenueId, Number(e.target.value))}
                 className="w-full"
+                aria-label={`Volume: ${firstPs.volume}%`}
               />
             </div>
 
@@ -598,13 +631,14 @@ export function AudioPlayerBar() {
             <button
               onClick={() => togglePanel(panelView === 'detail' ? 'none' : 'detail')}
               className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-              title={panelView !== 'none' ? 'Collapse' : 'Expand'}
+              aria-label={panelView !== 'none' ? 'Collapse panel' : 'Expand track details'}
+              aria-expanded={panelView !== 'none'}
             >
-              {panelView !== 'none' ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              {panelView !== 'none' ? <ChevronDown className="w-4 h-4" aria-hidden="true" /> : <ChevronUp className="w-4 h-4" aria-hidden="true" />}
             </button>
 
-            <Button variant="ghost" size="icon" className="w-8 h-8" onClick={stopAll} title="Stop all">
-              <StopCircle className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+            <Button variant="ghost" size="icon" className="w-7 h-7 sm:w-8 sm:h-8" onClick={stopAll} aria-label="Stop all playback">
+              <StopCircle className="w-4 h-4 text-muted-foreground hover:text-destructive" aria-hidden="true" />
             </Button>
           </div>
         </div>

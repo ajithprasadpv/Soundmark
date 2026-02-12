@@ -22,9 +22,22 @@ export default function SettingsPage() {
     email: state.user?.email || '',
   });
 
+  // State for notification toggles (was previously static)
+  const [notifications, setNotifications] = useState([
+    { id: 'playback', label: 'Playback Alerts', desc: 'Get notified when playback starts or stops', enabled: true },
+    { id: 'environment', label: 'Environment Changes', desc: 'Alerts for significant environment changes', enabled: true },
+    { id: 'weekly', label: 'Weekly Reports', desc: 'Receive weekly analytics summaries', enabled: false },
+    { id: 'system', label: 'System Updates', desc: 'Platform updates and maintenance notices', enabled: true },
+    { id: 'billing', label: 'Billing Alerts', desc: 'Subscription and payment notifications', enabled: true },
+  ]);
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const toggleNotification = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n));
   };
 
   const tabs = [
@@ -45,19 +58,20 @@ export default function SettingsPage() {
     <div className="animate-slide-up">
       <Header title="Settings" description="Manage your account and platform preferences" />
 
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-6">
         {/* Tabs */}
-        <div className="w-56 shrink-0">
-          <nav className="space-y-1">
+        <div className="w-full sm:w-56 shrink-0">
+          <nav className="flex sm:flex-col gap-1 overflow-x-auto sm:overflow-visible pb-2 sm:pb-0" aria-label="Settings sections">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                   activeTab === tab.id ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
+                aria-current={activeTab === tab.id ? 'true' : undefined}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
                 {tab.label}
               </button>
             ))}
@@ -74,7 +88,7 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white text-2xl font-bold" aria-hidden="true">
                     {profile.name.charAt(0)}
                   </div>
                   <div>
@@ -84,16 +98,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Full Name</label>
-                  <Input value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} />
+                  <label htmlFor="settings-name" className="text-sm font-medium">Full Name</label>
+                  <Input id="settings-name" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} autoComplete="name" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} />
+                  <label htmlFor="settings-email" className="text-sm font-medium">Email</label>
+                  <Input id="settings-email" type="email" value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} autoComplete="email" />
                 </div>
 
                 <Button onClick={handleSave} className="mt-4">
-                  {saved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+                  {saved ? <><Check className="w-4 h-4 mr-2" aria-hidden="true" /> Saved!</> : <><Save className="w-4 h-4 mr-2" aria-hidden="true" /> Save Changes</>}
                 </Button>
               </CardContent>
             </Card>
@@ -107,11 +121,11 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Organization Name</label>
-                  <Input defaultValue="Luxe Hospitality Group" />
+                  <label htmlFor="settings-org-name" className="text-sm font-medium">Organization Name</label>
+                  <Input id="settings-org-name" defaultValue="Luxe Hospitality Group" autoComplete="organization" />
                 </div>
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
-                  <Crown className="w-5 h-5 text-warning" />
+                  <Crown className="w-5 h-5 text-warning" aria-hidden="true" />
                   <div>
                     <p className="text-sm font-medium">Professional Plan</p>
                     <p className="text-xs text-muted-foreground">Up to 25 venues • 5,000 API calls/hr</p>
@@ -129,7 +143,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Button onClick={handleSave}>
-                  {saved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+                  {saved ? <><Check className="w-4 h-4 mr-2" aria-hidden="true" /> Saved!</> : <><Save className="w-4 h-4 mr-2" aria-hidden="true" /> Save Changes</>}
                 </Button>
               </CardContent>
             </Card>
@@ -157,7 +171,7 @@ export default function SettingsPage() {
                         <ul className="space-y-1.5">
                           {plan.features.map(f => (
                             <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <Check className="w-3 h-3 text-success" /> {f}
+                              <Check className="w-3 h-3 text-success" aria-hidden="true" /> {f}
                             </li>
                           ))}
                         </ul>
@@ -180,21 +194,21 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Current Password</label>
-                  <Input type="password" placeholder="Enter current password" />
+                  <label htmlFor="sec-current-pw" className="text-sm font-medium">Current Password</label>
+                  <Input id="sec-current-pw" type="password" placeholder="Enter current password" autoComplete="current-password" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">New Password</label>
-                  <Input type="password" placeholder="Min 8 chars, 1 upper, 1 number, 1 special" />
+                  <label htmlFor="sec-new-pw" className="text-sm font-medium">New Password</label>
+                  <Input id="sec-new-pw" type="password" placeholder="Min 8 chars, 1 upper, 1 number, 1 special" autoComplete="new-password" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Confirm New Password</label>
-                  <Input type="password" placeholder="Confirm new password" />
+                  <label htmlFor="sec-confirm-pw" className="text-sm font-medium">Confirm New Password</label>
+                  <Input id="sec-confirm-pw" type="password" placeholder="Confirm new password" autoComplete="new-password" />
                 </div>
 
                 <div className="p-4 rounded-xl bg-muted/50 mt-4">
                   <div className="flex items-center gap-3">
-                    <Key className="w-5 h-5 text-primary" />
+                    <Key className="w-5 h-5 text-primary" aria-hidden="true" />
                     <div>
                       <p className="text-sm font-medium">Two-Factor Authentication</p>
                       <p className="text-xs text-muted-foreground">Add an extra layer of security</p>
@@ -204,7 +218,7 @@ export default function SettingsPage() {
                 </div>
 
                 <Button onClick={handleSave}>
-                  {saved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Update Password</>}
+                  {saved ? <><Check className="w-4 h-4 mr-2" aria-hidden="true" /> Saved!</> : <><Save className="w-4 h-4 mr-2" aria-hidden="true" /> Update Password</>}
                 </Button>
               </CardContent>
             </Card>
@@ -217,23 +231,22 @@ export default function SettingsPage() {
                 <CardDescription>Configure how you receive notifications</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Playback Alerts', desc: 'Get notified when playback starts or stops', enabled: true },
-                    { label: 'Environment Changes', desc: 'Alerts for significant environment changes', enabled: true },
-                    { label: 'Weekly Reports', desc: 'Receive weekly analytics summaries', enabled: false },
-                    { label: 'System Updates', desc: 'Platform updates and maintenance notices', enabled: true },
-                    { label: 'Billing Alerts', desc: 'Subscription and payment notifications', enabled: true },
-                  ].map(notif => (
-                    <div key={notif.label} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                      <div>
-                        <p className="text-sm font-medium">{notif.label}</p>
-                        <p className="text-xs text-muted-foreground">{notif.desc}</p>
+                <div className="space-y-4" role="group" aria-label="Notification preferences">
+                  {notifications.map(notif => (
+                    <div key={notif.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="min-w-0 mr-3">
+                        <p className="text-sm font-medium" id={`notif-label-${notif.id}`}>{notif.label}</p>
+                        <p className="text-xs text-muted-foreground" id={`notif-desc-${notif.id}`}>{notif.desc}</p>
                       </div>
                       <button
-                        className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${notif.enabled ? 'bg-primary' : 'bg-muted'}`}
+                        role="switch"
+                        aria-checked={notif.enabled}
+                        aria-labelledby={`notif-label-${notif.id}`}
+                        aria-describedby={`notif-desc-${notif.id}`}
+                        onClick={() => toggleNotification(notif.id)}
+                        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer shrink-0 ${notif.enabled ? 'bg-primary' : 'bg-muted'}`}
                       >
-                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${notif.enabled ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${notif.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                       </button>
                     </div>
                   ))}

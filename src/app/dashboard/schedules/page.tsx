@@ -99,11 +99,11 @@ export default function SchedulesPage() {
                   <p className="text-sm text-muted-foreground mt-0.5">{getVenueName(schedule.venueId)}</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => toggleActive(schedule)}>
-                    <Power className={`w-4 h-4 ${schedule.isActive ? 'text-success' : 'text-muted-foreground'}`} />
+                  <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => toggleActive(schedule)} aria-label={schedule.isActive ? `Deactivate schedule ${schedule.name}` : `Activate schedule ${schedule.name}`}>
+                    <Power className={`w-4 h-4 ${schedule.isActive ? 'text-success' : 'text-muted-foreground'}`} aria-hidden="true" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => dispatch({ type: 'DELETE_SCHEDULE', payload: schedule.id })}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                  <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => dispatch({ type: 'DELETE_SCHEDULE', payload: schedule.id })} aria-label={`Delete schedule ${schedule.name}`}>
+                    <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -156,21 +156,21 @@ export default function SchedulesPage() {
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Create Schedule</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)}>
-                <X className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)} aria-label="Close dialog">
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Venue</label>
-                <Select value={newSchedule.venueId} onChange={e => setNewSchedule({ ...newSchedule, venueId: e.target.value })}>
+                <label htmlFor="sched-venue" className="text-sm font-medium">Venue</label>
+                <Select id="sched-venue" value={newSchedule.venueId} onChange={e => setNewSchedule({ ...newSchedule, venueId: e.target.value })}>
                   {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                 </Select>
               </div>
 
               <div>
-                <label className="text-sm font-medium">Schedule Name</label>
-                <Input placeholder="e.g. Morning Calm" value={newSchedule.name} onChange={e => setNewSchedule({ ...newSchedule, name: e.target.value })} />
+                <label htmlFor="sched-name" className="text-sm font-medium">Schedule Name</label>
+                <Input id="sched-name" placeholder="e.g. Morning Calm" value={newSchedule.name} onChange={e => setNewSchedule({ ...newSchedule, name: e.target.value })} />
               </div>
 
               <div>
@@ -192,12 +192,12 @@ export default function SchedulesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium">Start Time</label>
-                  <Input type="time" value={newSchedule.startTime} onChange={e => setNewSchedule({ ...newSchedule, startTime: e.target.value })} />
+                  <label htmlFor="sched-start" className="text-sm font-medium">Start Time</label>
+                  <Input id="sched-start" type="time" value={newSchedule.startTime} onChange={e => setNewSchedule({ ...newSchedule, startTime: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">End Time</label>
-                  <Input type="time" value={newSchedule.endTime} onChange={e => setNewSchedule({ ...newSchedule, endTime: e.target.value })} />
+                  <label htmlFor="sched-end" className="text-sm font-medium">End Time</label>
+                  <Input id="sched-end" type="time" value={newSchedule.endTime} onChange={e => setNewSchedule({ ...newSchedule, endTime: e.target.value })} />
                 </div>
               </div>
 

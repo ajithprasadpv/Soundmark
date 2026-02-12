@@ -168,7 +168,11 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium truncate text-foreground/90">{venue.name}</p>
                           <Badge variant={isPlaying ? 'success' : 'outline'} className={isPlaying ? 'shadow-sm shadow-emerald-400/20' : 'opacity-60'}>
-                            {isPlaying ? 'Playing' : 'Stopped'}
+                            {isPlaying ? (
+                              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" aria-hidden="true" /> Playing</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full border border-current" aria-hidden="true" /> Stopped</span>
+                            )}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground/70 mt-0.5">
@@ -188,13 +192,14 @@ export default function DashboardPage() {
                           variant={isPlaying ? 'outline' : 'default'}
                           size="icon"
                           onClick={() => togglePlayback(venue.id)}
+                          aria-label={isPlaying ? `Pause ${venue.name}` : `Play ${venue.name}`}
                           className={`w-9 h-9 rounded-xl transition-all duration-200 ${
                             isPlaying
                               ? 'border-border hover:bg-foreground/[0.06]'
                               : 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/25'
                           }`}
                         >
-                          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          {isPlaying ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4" aria-hidden="true" />}
                         </Button>
                       </div>
                     </div>

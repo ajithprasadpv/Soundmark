@@ -4,8 +4,26 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { AudioPlayerBar } from '@/components/layout/audio-player-bar';
+import { SidebarProvider, useSidebar } from '@/components/sidebar-context';
 import { useAppState } from '@/lib/store';
 import { mockUser, mockVenues, mockPlaybackStates, mockEnvironmentData, mockSchedules, mockAnalytics, mockMusicLibrary, mockMusicCategories, mockCustomerMappings, mockMusicSources } from '@/lib/mock-data';
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed, isMobile } = useSidebar();
+
+  // Compute main content margin based on sidebar state
+  const mainMargin = isMobile ? 'ml-0' : isCollapsed ? 'ml-[72px]' : 'ml-64';
+
+  return (
+    <div className="min-h-screen noise-bg">
+      <Sidebar />
+      <main className={`${mainMargin} transition-all duration-300 p-4 sm:p-6 lg:p-8 pb-28`}>
+        {children}
+      </main>
+      <AudioPlayerBar />
+    </div>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -41,10 +59,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen noise-bg">
-      <Sidebar />
-      <main className="ml-64 p-8 pb-28">{children}</main>
-      <AudioPlayerBar />
-    </div>
+    <SidebarProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </SidebarProvider>
   );
 }
