@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import {
   Music, Clock, Shield, Crown, Lock, Unlock, MoreVertical,
   FileAudio, Tag, Disc3, ChevronDown, Plus, Edit, Eye,
   HardDrive, RefreshCw, Globe, FolderOpen, Loader2,
+  Volume2, VolumeX, Square, SkipForward,
 } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
 
@@ -77,6 +78,25 @@ export default function MusicLibraryPage() {
   const [s3SelectedTrack, setS3SelectedTrack] = useState<S3Track | null>(null);
   const [s3PlayingKey, setS3PlayingKey] = useState<string | null>(null);
   const [s3AudioEl, setS3AudioEl] = useState<HTMLAudioElement | null>(null);
+  const [s3Progress, setS3Progress] = useState(0);
+  const [s3Duration, setS3Duration] = useState(0);
+  const [s3CurrentTime, setS3CurrentTime] = useState(0);
+  const [s3Muted, setS3Muted] = useState(false);
+  const [s3Volume, setS3Volume] = useState(0.8);
+  const s3ProgressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopS3Playback = useCallback(() => {
+    if (s3AudioEl) {
+      s3AudioEl.pause();
+      s3AudioEl.src = '';
+    }
+    if (s3ProgressInterval.current) clearInterval(s3ProgressInterval.current);
+    setS3PlayingKey(null);
+    setS3AudioEl(null);
+    setS3Progress(0);
+    setS3CurrentTime(0);
+    setS3Duration(0);
+  }, [s3AudioEl]);
 
   const fetchS3Tracks = useCallback(async () => {
     setS3Loading(true);
@@ -103,18 +123,57 @@ export default function MusicLibraryPage() {
 
   const playS3Track = (track: S3Track) => {
     if (s3PlayingKey === track.key) {
-      s3AudioEl?.pause();
-      setS3PlayingKey(null);
-      setS3AudioEl(null);
+      // Toggle pause/resume
+      if (s3AudioEl?.paused) {
+        s3AudioEl.play();
+      } else {
+        s3AudioEl?.pause();
+      }
       return;
     }
-    s3AudioEl?.pause();
+    stopS3Playback();
     const el = new Audio(track.streamUrl);
+    el.volume = s3Volume;
+    el.muted = s3Muted;
+    el.onloadedmetadata = () => setS3Duration(el.duration);
+    el.onended = () => stopS3Playback();
     el.play();
-    el.onended = () => { setS3PlayingKey(null); setS3AudioEl(null); };
     setS3AudioEl(el);
     setS3PlayingKey(track.key);
+    setS3SelectedTrack(track);
+    // Progress tracking
+    if (s3ProgressInterval.current) clearInterval(s3ProgressInterval.current);
+    s3ProgressInterval.current = setInterval(() => {
+      if (el && !el.paused) {
+        setS3CurrentTime(el.currentTime);
+        setS3Progress(el.duration ? (el.currentTime / el.duration) * 100 : 0);
+      }
+    }, 250);
   };
+
+  const seekS3 = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!s3AudioEl || !s3Duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    s3AudioEl.currentTime = pct * s3Duration;
+    setS3CurrentTime(s3AudioEl.currentTime);
+    setS3Progress(pct * 100);
+  };
+
+  const toggleS3Mute = () => {
+    setS3Muted(prev => {
+      const next = !prev;
+      if (s3AudioEl) s3AudioEl.muted = next;
+      return next;
+    });
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (s3ProgressInterval.current) clearInterval(s3ProgressInterval.current);
+    };
+  }, []);
 
   const filteredS3Tracks = s3Search
     ? s3Tracks.filter(t => t.filename.toLowerCase().includes(s3Search.toLowerCase()) || t.genre.toLowerCase().includes(s3Search.toLowerCase()))
@@ -380,6 +439,98 @@ export default function MusicLibraryPage() {
               </div>
             </div>
           )}
+
+          {/* ── Mini Player Bar ── */}
+          {s3PlayingKey && (() => {
+            const nowPlaying = s3Tracks.find(t => t.key === s3PlayingKey);
+            if (!nowPlaying) return null;
+            const fmtTime = (s: number) => {
+              const m = Math.floor(s / 60);
+              const sec = Math.floor(s % 60);
+              return `${m}:${sec.toString().padStart(2, '0')}`;
+            };
+            return (
+              <div className="fixed bottom-0 left-0 right-0 z-50 lg:left-64 bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-2xl shadow-black/20">
+                {/* Progress bar — clickable to seek */}
+                <div
+                  className="h-1 bg-muted cursor-pointer group relative"
+                  onClick={seekS3}
+                >
+                  <div
+                    className="h-full bg-gradient-to-r from-violet-500 to-purple-500 transition-[width] duration-200"
+                    style={{ width: `${s3Progress}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md border-2 border-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ left: `${s3Progress}%`, marginLeft: '-6px' }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-2.5">
+                  {/* Track info */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center shrink-0">
+                      <Music className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{nowPlaying.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{LANGUAGE_LABELS[nowPlaying.language] || nowPlaying.language} • {nowPlaying.genre}</p>
+                    </div>
+                  </div>
+
+                  {/* Time */}
+                  <span className="text-[11px] text-muted-foreground font-mono hidden sm:block">
+                    {fmtTime(s3CurrentTime)} / {fmtTime(s3Duration)}
+                  </span>
+
+                  {/* Controls */}
+                  <div className="flex items-center gap-1">
+                    {/* Play/Pause */}
+                    <button
+                      onClick={() => playS3Track(nowPlaying)}
+                      className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors cursor-pointer shadow-md shadow-violet-500/30"
+                    >
+                      {s3AudioEl?.paused ? <Play className="w-4 h-4 ml-0.5" /> : <Pause className="w-4 h-4" />}
+                    </button>
+
+                    {/* Mute */}
+                    <button
+                      onClick={toggleS3Mute}
+                      className="w-8 h-8 rounded-lg hover:bg-foreground/[0.06] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title={s3Muted ? 'Unmute' : 'Mute'}
+                    >
+                      {s3Muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+
+                    {/* Volume slider — desktop only */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={s3Muted ? 0 : s3Volume}
+                      onChange={e => {
+                        const v = parseFloat(e.target.value);
+                        setS3Volume(v);
+                        if (s3AudioEl) s3AudioEl.volume = v;
+                        if (v > 0 && s3Muted) setS3Muted(false);
+                      }}
+                      className="w-20 h-1 accent-violet-500 hidden sm:block cursor-pointer"
+                    />
+
+                    {/* Stop */}
+                    <button
+                      onClick={stopS3Playback}
+                      className="w-8 h-8 rounded-lg hover:bg-foreground/[0.06] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Stop"
+                    >
+                      <Square className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* S3 Empty State */}
           {!s3Loading && !s3Error && filteredS3Tracks.length === 0 && (
