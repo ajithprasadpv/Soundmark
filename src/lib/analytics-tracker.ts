@@ -70,6 +70,10 @@ export function logPlay(event: Omit<PlayEvent, 'id' | 'playedAt'>) {
   saveEvents(events);
 }
 
+export function getPlayEvents(): PlayEvent[] {
+  return getStoredEvents();
+}
+
 export function getAnalytics(): ComputedAnalytics {
   const events = getStoredEvents();
   // Also save back (auto-purges stale entries)

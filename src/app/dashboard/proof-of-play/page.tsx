@@ -1,84 +1,82 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockProofOfPlayReports, MonthlyReport, ProofOfPlayEntry } from '@/lib/mock-data';
+import { getPlayEvents, PlayEvent } from '@/lib/analytics-tracker';
 import {
-  FileText, Download, Calendar, Clock, Music, MapPin,
-  ChevronDown, ChevronRight, Filter, Search, CheckCircle2,
-  BarChart3, Globe,
+  FileText, Download, Clock, Music,
+  Search, CheckCircle2, BarChart3, Globe,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ProofOfPlayPage() {
-  const reports = mockProofOfPlayReports;
-  const [selectedReport, setSelectedReport] = useState<MonthlyReport | null>(reports[reports.length - 1] ?? null);
-  const [venueFilter, setVenueFilter] = useState<string>('all');
+  const [events, setEvents] = useState<PlayEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedVenue, setExpandedVenue] = useState<string | null>(null);
+  const [genreFilter, setGenreFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [generating, setGenerating] = useState(false);
 
-  if (!selectedReport || reports.length === 0) {
+  useEffect(() => {
+    setEvents(getPlayEvents());
+  }, []);
+
+  // Empty state
+  if (events.length === 0) {
     return (
       <div className="animate-slide-up">
         <Header title="Proof of Play" description="Verified playback reports for licensing compliance" />
         <div className="text-center py-20">
           <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-          <p className="text-lg font-medium text-foreground/70">No reports yet</p>
-          <p className="text-sm text-muted-foreground mt-1">Playback reports will appear here once venues start streaming music</p>
+          <p className="text-lg font-medium text-foreground/70">No play records yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Play tracks from the Music Library to build your proof-of-play log</p>
         </div>
       </div>
     );
   }
 
-  const filteredEntries = useMemo(() => {
-    let entries = selectedReport.entries;
-    if (venueFilter !== 'all') {
-      entries = entries.filter(e => e.venueId === venueFilter);
-    }
+  const filteredEvents = events.filter(e => {
+    if (genreFilter !== 'all' && e.genre !== genreFilter) return false;
+    if (sourceFilter !== 'all' && e.source !== sourceFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter(e =>
+      return (
         e.trackTitle.toLowerCase().includes(q) ||
         e.artist.toLowerCase().includes(q) ||
         e.genre.toLowerCase().includes(q)
       );
     }
-    return entries;
-  }, [selectedReport, venueFilter, searchQuery]);
+    return true;
+  });
 
-  const venueNames = useMemo(() => {
-    const map = new Map<string, string>();
-    selectedReport.entries.forEach(e => map.set(e.venueId, e.venueName));
-    return Array.from(map.entries());
-  }, [selectedReport]);
+  // Sorted newest first
+  const sortedEvents = [...filteredEvents].sort((a, b) =>
+    new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime()
+  );
 
-  const venueStats = useMemo(() => {
-    const stats: Record<string, { tracks: number; hours: number; completed: number }> = {};
-    filteredEntries.forEach(e => {
-      if (!stats[e.venueId]) stats[e.venueId] = { tracks: 0, hours: 0, completed: 0 };
-      stats[e.venueId].tracks++;
-      stats[e.venueId].hours += e.duration;
-      if (e.completedFull) stats[e.venueId].completed++;
-    });
-    Object.keys(stats).forEach(k => { stats[k].hours = Math.round(stats[k].hours / 3600); });
-    return stats;
-  }, [filteredEntries]);
+  // Stats
+  const totalSec = filteredEvents.reduce((s, e) => s + e.durationSec, 0);
+  const totalMinutes = Math.round(totalSec / 60);
+  const totalHoursDisplay = totalSec >= 3600
+    ? `${(totalSec / 3600).toFixed(1)}h`
+    : `${totalMinutes}m`;
 
-  const sourceBreakdown = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filteredEntries.forEach(e => { counts[e.source] = (counts[e.source] || 0) + 1; });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [filteredEntries]);
+  // Genre breakdown
+  const genreCounts: Record<string, number> = {};
+  filteredEvents.forEach(e => { genreCounts[e.genre || 'Unknown'] = (genreCounts[e.genre || 'Unknown'] || 0) + 1; });
+  const genreBreakdown = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]);
 
-  const completionRate = useMemo(() => {
-    if (filteredEntries.length === 0) return 0;
-    return Math.round((filteredEntries.filter(e => e.completedFull).length / filteredEntries.length) * 100);
-  }, [filteredEntries]);
+  // Source breakdown
+  const sourceCounts: Record<string, number> = {};
+  filteredEvents.forEach(e => { sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1; });
+  const sourceBreakdown = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]);
+
+  // All genres for filter
+  const allGenres = [...new Set(events.map(e => e.genre))].sort();
+  const allSources = [...new Set(events.map(e => e.source))].sort();
 
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
@@ -92,6 +90,7 @@ export default function ProofOfPlayPage() {
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
+    const now = new Date();
 
     // Header
     doc.setFillColor(30, 30, 35);
@@ -102,11 +101,10 @@ export default function ProofOfPlayPage() {
     doc.text('Proof of Play Report', 14, 16);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${selectedReport.month} ${selectedReport.year}`, 14, 24);
+    doc.text(`Last 5 Days`, 14, 24);
     doc.setFontSize(9);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 14, 30);
-    doc.text('Luxe Hospitality Group', pageWidth - 14, 16, { align: 'right' });
-    doc.text('Powered by Soundmark', pageWidth - 14, 24, { align: 'right' });
+    doc.text(`Generated: ${now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 14, 30);
+    doc.text('Powered by Soundmark', pageWidth - 14, 16, { align: 'right' });
 
     // Summary
     doc.setTextColor(60, 60, 60);
@@ -115,126 +113,76 @@ export default function ProofOfPlayPage() {
     doc.text('Summary', 14, 45);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    const totalHours = Math.round(filteredEntries.reduce((s, e) => s + e.duration, 0) / 3600);
-    doc.text(`Total Tracks Played: ${filteredEntries.length.toLocaleString()}`, 14, 52);
-    doc.text(`Total Playback Hours: ${totalHours.toLocaleString()}h`, 14, 58);
-    doc.text(`Active Venues: ${venueNames.length}`, 100, 52);
-    doc.text(`Completion Rate: ${completionRate}%`, 100, 58);
-    doc.text(`Sources: ${sourceBreakdown.map(([s, c]) => `${s} (${c})`).join(', ')}`, 14, 64);
-
-    // Venue breakdown table
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Venue Breakdown', 14, 76);
-
-    const venueRows = venueNames.map(([vid, vname]) => {
-      const s = venueStats[vid] || { tracks: 0, hours: 0, completed: 0 };
-      const rate = s.tracks > 0 ? Math.round((s.completed / s.tracks) * 100) : 0;
-      return [vname, String(s.tracks), `${s.hours}h`, `${rate}%`];
-    });
-
-    autoTable(doc, {
-      startY: 80,
-      head: [['Venue', 'Tracks', 'Hours', 'Completion']],
-      body: venueRows,
-      theme: 'grid',
-      headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
-    });
+    doc.text(`Total Tracks Played: ${sortedEvents.length}`, 14, 52);
+    doc.text(`Total Playback: ${totalHoursDisplay}`, 14, 58);
+    doc.text(`Genres: ${genreBreakdown.map(([g, c]) => `${g} (${c})`).join(', ')}`, 14, 64);
+    doc.text(`Sources: ${sourceBreakdown.map(([s, c]) => `${s} (${c})`).join(', ')}`, 14, 70);
 
     // Track log table
-    doc.addPage();
-    doc.setFillColor(30, 30, 35);
-    doc.rect(0, 0, pageWidth, 20, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detailed Play Log', 14, 14);
+    doc.text('Detailed Play Log', 14, 82);
 
-    const trackRows = filteredEntries.slice(0, 500).map(e => [
+    const trackRows = sortedEvents.map(e => [
       new Date(e.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       new Date(e.playedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      e.venueName,
       e.trackTitle,
       e.artist,
       e.genre,
-      e.source,
-      e.licenseType,
-      formatDuration(e.duration),
-      e.completedFull ? 'Yes' : 'No',
+      e.source === 's3' ? 'S3 Library' : 'Venue',
+      formatDuration(e.durationSec),
     ]);
 
     autoTable(doc, {
-      startY: 26,
-      head: [['Date', 'Time', 'Venue', 'Track', 'Artist', 'Genre', 'Source', 'License', 'Duration', 'Full Play']],
+      startY: 86,
+      head: [['Date', 'Time', 'Track', 'Artist', 'Genre', 'Source', 'Duration']],
       body: trackRows,
       theme: 'striped',
-      headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 7 },
-      bodyStyles: { fontSize: 6.5 },
-      columnStyles: {
-        0: { cellWidth: 18 }, 1: { cellWidth: 16 }, 2: { cellWidth: 35 },
-        3: { cellWidth: 35 }, 4: { cellWidth: 28 }, 5: { cellWidth: 20 },
-        6: { cellWidth: 22 }, 7: { cellWidth: 16 }, 8: { cellWidth: 16 }, 9: { cellWidth: 14 },
-      },
+      headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 8 },
+      bodyStyles: { fontSize: 7 },
       margin: { left: 14, right: 14 },
     });
 
-    // Footer on all pages
+    // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
       doc.text(
-        `Soundmark — Proof of Play — ${selectedReport.month} ${selectedReport.year} — Page ${i} of ${pageCount}`,
+        `Soundmark — Proof of Play — Page ${i} of ${pageCount}`,
         pageWidth / 2, doc.internal.pageSize.getHeight() - 6,
         { align: 'center' }
       );
     }
 
-    doc.save(`proof-of-play-${selectedReport.month.toLowerCase()}-${selectedReport.year}.pdf`);
+    doc.save(`proof-of-play-${now.toISOString().split('T')[0]}.pdf`);
     setGenerating(false);
   };
 
   return (
     <div className="animate-slide-up">
-      <Header title="Proof of Play" description="Monthly playback verification reports for licensing compliance" />
+      <Header title="Proof of Play" description="Verified playback log from your actual listening activity (last 5 days)" />
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground hidden sm:block" />
-          <select
-            value={`${selectedReport.month}-${selectedReport.year}`}
-            onChange={(e) => {
-              const [m, y] = e.target.value.split('-');
-              const r = reports.find(r => r.month === m && r.year === Number(y));
-              if (r) setSelectedReport(r);
-            }}
-            className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {reports.map(r => (
-              <option key={`${r.month}-${r.year}`} value={`${r.month}-${r.year}`}>
-                {r.month} {r.year}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={genreFilter}
+          onChange={(e) => setGenreFilter(e.target.value)}
+          className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="all">All Genres</option>
+          {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
 
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground hidden sm:block" />
-          <select
-            value={venueFilter}
-            onChange={(e) => setVenueFilter(e.target.value)}
-            className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">All Venues</option>
-            {venueNames.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="all">All Sources</option>
+          {allSources.map(s => <option key={s} value={s}>{s === 's3' ? 'S3 Library' : 'Venue'}</option>)}
+        </select>
 
         <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm order-last sm:order-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -255,13 +203,12 @@ export default function ProofOfPlayPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {[
-          { label: 'Total Tracks', value: filteredEntries.length.toLocaleString(), icon: Music, color: 'text-primary', bg: 'bg-primary/10' },
-          { label: 'Playback Hours', value: `${Math.round(filteredEntries.reduce((s, e) => s + e.duration, 0) / 3600)}h`, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-          { label: 'Active Venues', value: String(venueNames.length), icon: MapPin, color: 'text-green-400', bg: 'bg-green-400/10' },
-          { label: 'Completion Rate', value: `${completionRate}%`, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-          { label: 'Sources Used', value: String(sourceBreakdown.length), icon: Globe, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+          { label: 'Total Tracks', value: filteredEvents.length.toLocaleString(), icon: Music, color: 'text-primary', bg: 'bg-primary/10' },
+          { label: 'Playback Time', value: totalHoursDisplay, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+          { label: 'Genres', value: String(genreBreakdown.length), icon: BarChart3, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+          { label: 'Sources', value: String(sourceBreakdown.length), icon: Globe, color: 'text-purple-400', bg: 'bg-purple-400/10' },
         ].map(stat => (
           <Card key={stat.label} className="hover:border-primary/30 transition-colors">
             <CardContent className="p-4">
@@ -280,23 +227,23 @@ export default function ProofOfPlayPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Source Breakdown */}
+        {/* Genre Breakdown */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Globe className="w-4 h-4 text-primary" />
-              Source Breakdown
+              <BarChart3 className="w-4 h-4 text-primary" />
+              Genre Breakdown
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {sourceBreakdown.map(([source, count]) => {
-                const pct = Math.round((count / filteredEntries.length) * 100);
+              {genreBreakdown.map(([genre, count]) => {
+                const pct = Math.round((count / filteredEvents.length) * 100);
                 return (
-                  <div key={source}>
+                  <div key={genre}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">{source}</span>
-                      <span className="text-xs text-muted-foreground">{count.toLocaleString()} ({pct}%)</span>
+                      <span className="text-xs font-medium">{genre}</span>
+                      <span className="text-xs text-muted-foreground">{count} ({pct}%)</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1.5">
                       <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -304,116 +251,60 @@ export default function ProofOfPlayPage() {
                   </div>
                 );
               })}
+              {genreBreakdown.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">No data</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Venue Performance */}
+        {/* Play Log */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              Venue Performance
+              <FileText className="w-4 h-4 text-primary" />
+              Play Log ({sortedEvents.length} entries)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {venueNames.map(([vid, vname]) => {
-                const s = venueStats[vid] || { tracks: 0, hours: 0, completed: 0 };
-                const rate = s.tracks > 0 ? Math.round((s.completed / s.tracks) * 100) : 0;
-                const isExpanded = expandedVenue === vid;
-                const venueEntries = filteredEntries.filter(e => e.venueId === vid);
-                return (
-                  <div key={vid}>
-                    <button
-                      onClick={() => setExpandedVenue(isExpanded ? null : vid)}
-                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-left"
-                    >
-                      {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-                      <span className="text-xs font-medium flex-1 truncate">{vname}</span>
-                      <span className="text-[10px] text-muted-foreground">{s.tracks} tracks</span>
-                      <span className="text-[10px] text-muted-foreground">{s.hours}h</span>
-                      <Badge variant="outline" className="text-[10px] px-1.5">{rate}%</Badge>
-                    </button>
-                    {isExpanded && (
-                      <div className="ml-0 sm:ml-7 mt-1 mb-2 max-h-40 overflow-x-auto overflow-y-auto border border-border rounded-lg">
-                        <table className="w-full text-[10px] min-w-[400px]">
-                          <thead className="bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Date</th>
-                              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Track</th>
-                              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Artist</th>
-                              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Source</th>
-                              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Duration</th>
-                              <th className="text-center px-2 py-1 font-medium text-muted-foreground">Full</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {venueEntries.slice(0, 30).map(e => (
-                              <tr key={e.id} className="border-t border-border/50">
-                                <td className="px-2 py-1 text-muted-foreground">{new Date(e.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
-                                <td className="px-2 py-1 font-medium truncate max-w-[120px]">{e.trackTitle}</td>
-                                <td className="px-2 py-1 text-muted-foreground truncate max-w-[100px]">{e.artist}</td>
-                                <td className="px-2 py-1 text-muted-foreground">{e.source}</td>
-                                <td className="px-2 py-1 text-muted-foreground">{formatDuration(e.duration)}</td>
-                                <td className="px-2 py-1 text-center">{e.completedFull ? <CheckCircle2 className="w-3 h-3 text-green-400 inline" /> : <span className="text-muted-foreground">—</span>}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {venueEntries.length > 30 && (
-                          <p className="text-[10px] text-muted-foreground text-center py-1">+{venueEntries.length - 30} more entries — download PDF for full report</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {sortedEvents.length > 0 ? (
+            <div className="max-h-[400px] overflow-x-auto overflow-y-auto border border-border rounded-lg">
+              <table className="w-full text-[11px] min-w-[500px]">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date & Time</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Track</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Artist</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Genre</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Source</th>
+                    <th className="text-right px-3 py-2 font-medium text-muted-foreground">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedEvents.map(e => (
+                    <tr key={e.id} className="border-t border-border/50 hover:bg-muted/30">
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(e.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}{' '}
+                        {new Date(e.playedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-3 py-2 font-medium truncate max-w-[180px]">{e.trackTitle}</td>
+                      <td className="px-3 py-2 text-muted-foreground truncate max-w-[120px]">{e.artist}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="text-[10px] px-1.5">{e.genre}</Badge>
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">{e.source === 's3' ? 'S3 Library' : 'Venue'}</td>
+                      <td className="px-3 py-2 text-right font-mono text-muted-foreground">{formatDuration(e.durationSec)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            ) : (
+              <div className="text-center py-8 text-xs text-muted-foreground">No matching entries</div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Available Reports */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" />
-            Available Reports
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {reports.map(r => (
-              <div
-                key={`${r.month}-${r.year}`}
-                className={`flex items-center gap-2 sm:gap-4 p-3 rounded-lg border transition-colors cursor-pointer ${selectedReport.month === r.month && selectedReport.year === r.year ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
-                onClick={() => setSelectedReport(r)}
-              >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{r.month} {r.year}</p>
-                  <p className="text-xs text-muted-foreground">{r.totalTracks.toLocaleString()} tracks • {r.totalHours}h playback • {r.venues} venues</p>
-                </div>
-                <Badge variant={selectedReport.month === r.month ? 'default' : 'outline'} className="text-[10px] hidden sm:inline-flex">
-                  {selectedReport.month === r.month && selectedReport.year === r.year ? 'Selected' : 'View'}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1"
-                  onClick={(e) => { e.stopPropagation(); setSelectedReport(r); setTimeout(generatePDF, 100); }}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  PDF
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
