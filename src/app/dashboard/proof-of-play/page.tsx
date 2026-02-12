@@ -189,9 +189,9 @@ export default function ProofOfPlayPage() {
       <Header title="Proof of Play" description="Monthly playback verification reports for licensing compliance" />
 
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <Calendar className="w-4 h-4 text-muted-foreground hidden sm:block" />
           <select
             value={`${selectedReport.month}-${selectedReport.year}`}
             onChange={(e) => {
@@ -199,7 +199,7 @@ export default function ProofOfPlayPage() {
               const r = reports.find(r => r.month === m && r.year === Number(y));
               if (r) setSelectedReport(r);
             }}
-            className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {reports.map(r => (
               <option key={`${r.month}-${r.year}`} value={`${r.month}-${r.year}`}>
@@ -210,11 +210,11 @@ export default function ProofOfPlayPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Filter className="w-4 h-4 text-muted-foreground hidden sm:block" />
           <select
             value={venueFilter}
             onChange={(e) => setVenueFilter(e.target.value)}
-            className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="bg-card border border-border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">All Venues</option>
             {venueNames.map(([id, name]) => (
@@ -223,7 +223,7 @@ export default function ProofOfPlayPage() {
           </select>
         </div>
 
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm order-last sm:order-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
@@ -236,12 +236,13 @@ export default function ProofOfPlayPage() {
 
         <Button onClick={generatePDF} disabled={generating} className="ml-auto gap-2">
           <Download className="w-4 h-4" />
-          {generating ? 'Generating...' : 'Download PDF'}
+          <span className="hidden sm:inline">{generating ? 'Generating...' : 'Download PDF'}</span>
+          <span className="sm:hidden">{generating ? '...' : 'PDF'}</span>
         </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
         {[
           { label: 'Total Tracks', value: filteredEntries.length.toLocaleString(), icon: Music, color: 'text-primary', bg: 'bg-primary/10' },
           { label: 'Playback Hours', value: `${Math.round(filteredEntries.reduce((s, e) => s + e.duration, 0) / 3600)}h`, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
@@ -322,8 +323,8 @@ export default function ProofOfPlayPage() {
                       <Badge variant="outline" className="text-[10px] px-1.5">{rate}%</Badge>
                     </button>
                     {isExpanded && (
-                      <div className="ml-7 mt-1 mb-2 max-h-40 overflow-y-auto border border-border rounded-lg">
-                        <table className="w-full text-[10px]">
+                      <div className="ml-0 sm:ml-7 mt-1 mb-2 max-h-40 overflow-x-auto overflow-y-auto border border-border rounded-lg">
+                        <table className="w-full text-[10px] min-w-[400px]">
                           <thead className="bg-muted/50 sticky top-0">
                             <tr>
                               <th className="text-left px-2 py-1 font-medium text-muted-foreground">Date</th>
@@ -373,7 +374,7 @@ export default function ProofOfPlayPage() {
             {reports.map(r => (
               <div
                 key={`${r.month}-${r.year}`}
-                className={`flex items-center gap-4 p-3 rounded-lg border transition-colors cursor-pointer ${selectedReport.month === r.month && selectedReport.year === r.year ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+                className={`flex items-center gap-2 sm:gap-4 p-3 rounded-lg border transition-colors cursor-pointer ${selectedReport.month === r.month && selectedReport.year === r.year ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
                 onClick={() => setSelectedReport(r)}
               >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -383,7 +384,7 @@ export default function ProofOfPlayPage() {
                   <p className="text-sm font-medium">{r.month} {r.year}</p>
                   <p className="text-xs text-muted-foreground">{r.totalTracks.toLocaleString()} tracks • {r.totalHours}h playback • {r.venues} venues</p>
                 </div>
-                <Badge variant={selectedReport.month === r.month ? 'default' : 'outline'} className="text-[10px]">
+                <Badge variant={selectedReport.month === r.month ? 'default' : 'outline'} className="text-[10px] hidden sm:inline-flex">
                   {selectedReport.month === r.month && selectedReport.year === r.year ? 'Selected' : 'View'}
                 </Badge>
                 <Button

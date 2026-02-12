@@ -114,19 +114,19 @@ export default function VenuesPage() {
       <Header title="Venues" description="Manage your venue locations and music configurations" />
 
       {/* Filters & Actions */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto">
           {(['all', 'active', 'inactive', 'setup'] as const).map(f => (
             <Button
               key={f}
               variant={filter === f ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter(f)}
-              className={filter === f ? 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20' : 'border-border hover:bg-foreground/[0.04]'}
+              className={`shrink-0 ${filter === f ? 'bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20' : 'border-border hover:bg-foreground/[0.04]'}`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
               {f !== 'all' && (
-                <span className="ml-1.5 text-xs opacity-60">
+                <span className="ml-1 sm:ml-1.5 text-xs opacity-60">
                   {venues.filter(v => v.status === f).length}
                 </span>
               )}
@@ -134,7 +134,7 @@ export default function VenuesPage() {
           ))}
         </div>
         <Button onClick={() => setShowCreate(true)} className="bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20">
-          <Plus className="w-4 h-4 mr-2" /> Add Venue
+          <Plus className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Add Venue</span>
         </Button>
       </div>
 

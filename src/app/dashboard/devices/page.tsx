@@ -158,8 +158,8 @@ export default function DevicesPage() {
       <Header title="Devices" description="Manage Android TV boxes deployed at your venues" />
 
       {/* Actions */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-border text-muted-foreground/70">
             {devices.length} device{devices.length !== 1 ? 's' : ''}
           </Badge>
@@ -169,10 +169,10 @@ export default function DevicesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchDevices} className="border-border hover:bg-foreground/[0.04]">
-            <RefreshCw className="w-4 h-4 mr-1.5" /> Refresh
+            <RefreshCw className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Refresh</span>
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)} className="bg-violet-500 hover:bg-violet-400 shadow-md shadow-violet-500/20">
-            <Plus className="w-4 h-4 mr-1.5" /> Add Device
+            <Plus className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Add Device</span>
           </Button>
         </div>
       </div>
@@ -244,7 +244,7 @@ export default function DevicesPage() {
 
                     {/* Pairing Code */}
                     {!device.paired && (
-                      <div className="shrink-0 text-right">
+                      <div className="shrink-0 text-right hidden sm:block">
                         <p className="text-[10px] text-muted-foreground/50 mb-0.5">Pairing Code</p>
                         <button
                           onClick={(e) => { e.stopPropagation(); copyCode(device.pairingCode); }}

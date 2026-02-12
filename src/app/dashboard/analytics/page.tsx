@@ -66,8 +66,8 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#f4f4f5', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-                  labelStyle={{ color: '#9ca3af' }}
+                  contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-foreground)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
+                  labelStyle={{ color: 'var(--color-muted-foreground)' }}
                   cursor={{ fill: 'rgba(139,92,246,0.06)' }}
                 />
                 <defs>
@@ -91,18 +91,18 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <ResponsiveContainer width="60%" height={280}>
+            <div className="flex flex-col sm:flex-row items-center">
+              <ResponsiveContainer width="100%" height={220} className="sm:!w-[60%] sm:!h-[280px]">
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={65} outerRadius={105} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" strokeWidth={0}>
                     {pieData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#f4f4f5', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-foreground)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="w-[40%] space-y-2.5">
+              <div className="w-full sm:w-[40%] space-y-2.5 mt-2 sm:mt-0">
                 {pieData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                 <XAxis dataKey="hour" stroke="#6b7280" fontSize={11} />
                 <YAxis stroke="#6b7280" fontSize={12} />
-                <Tooltip contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#f4f4f5', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-foreground)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} />
                 <defs>
                   <linearGradient id="colorVenues" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />

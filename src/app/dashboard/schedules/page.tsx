@@ -70,16 +70,16 @@ export default function SchedulesPage() {
     <div className="animate-slide-up">
       <Header title="Schedules" description="Configure day-part scheduling for automated music playback" />
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Select value={filterVenue} onChange={e => setFilterVenue(e.target.value)} className="w-48">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Select value={filterVenue} onChange={e => setFilterVenue(e.target.value)} className="w-36 sm:w-48">
             <option value="all">All Venues</option>
             {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </Select>
-          <span className="text-sm text-muted-foreground">{filteredSchedules.length} schedules</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">{filteredSchedules.length} schedules</span>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Add Schedule
+          <Plus className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Add Schedule</span>
         </Button>
       </div>
 

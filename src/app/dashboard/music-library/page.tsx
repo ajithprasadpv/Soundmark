@@ -126,7 +126,7 @@ export default function MusicLibraryPage() {
       <Header title="Music Library" description="Manage your music catalog — upload, categorize, and control access" />
 
       {/* Category Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <Card className="hover:border-primary/30 transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -184,27 +184,27 @@ export default function MusicLibraryPage() {
       {/* Filters & Actions */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search tracks..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 w-56 bg-muted border-0" />
+            <Input placeholder="Search tracks..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 w-full sm:w-56 bg-muted border-0" />
           </div>
-          <Select value={filterLicense} onChange={e => setFilterLicense(e.target.value as 'all' | LicenseType)} className="w-44">
+          <Select value={filterLicense} onChange={e => setFilterLicense(e.target.value as 'all' | LicenseType)} className="w-32 sm:w-44">
             <option value="all">All Licenses</option>
             <option value="copyright-free">Copyright-Free</option>
             <option value="copyrighted">Copyrighted</option>
           </Select>
-          <Select value={filterGenre} onChange={e => setFilterGenre(e.target.value)} className="w-36">
+          <Select value={filterGenre} onChange={e => setFilterGenre(e.target.value)} className="w-28 sm:w-36">
             <option value="all">All Genres</option>
             {allGenres.map(g => <option key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</option>)}
           </Select>
-          <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')} className="w-32">
+          <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')} className="w-28 sm:w-32">
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </Select>
         </div>
         <Button onClick={() => setShowUpload(true)}>
-          <Upload className="w-4 h-4 mr-2" /> Upload Track
+          <Upload className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Upload Track</span>
         </Button>
       </div>
 
@@ -212,7 +212,8 @@ export default function MusicLibraryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
+              <div className="min-w-[600px]">
               {/* Table Header */}
               <div className="grid grid-cols-[1fr_120px_100px_80px_100px_80px] gap-2 px-4 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <span>Track</span>
@@ -290,6 +291,7 @@ export default function MusicLibraryPage() {
                 ))}
               </div>
 
+              </div>
               {filteredTracks.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Music className="w-10 h-10 mx-auto mb-2 opacity-30" />
