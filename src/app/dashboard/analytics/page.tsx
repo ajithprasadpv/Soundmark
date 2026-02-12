@@ -1,34 +1,49 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAppState } from '@/lib/store';
-import { BarChart3, TrendingUp, Clock, Music, Star, Zap } from 'lucide-react';
+import { BarChart3, TrendingUp, Clock, Music, Zap } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, LineChart, Line,
+  PieChart, Pie, Cell,
 } from 'recharts';
+import { getAnalytics, ComputedAnalytics } from '@/lib/analytics-tracker';
 
 const COLORS = ['#8b5cf6', '#a78bfa', '#c4b5fd', '#7dd3fc', '#6ee7b7', '#fbbf24'];
 
 export default function AnalyticsPage() {
-  const { state } = useAppState();
-  const { analytics } = state;
+  const [data, setData] = useState<ComputedAnalytics | null>(null);
 
-  if (!analytics) return null;
+  useEffect(() => {
+    setData(getAnalytics());
+  }, []);
 
-  const pieData = analytics.genreDistribution.map(g => ({ name: g.genre, value: g.percentage }));
+  if (!data || data.tracksPlayed === 0) {
+    return (
+      <div className="animate-slide-up">
+        <Header title="Analytics" description="Insights and performance metrics from your playback" />
+        <div className="text-center py-20">
+          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+          <p className="text-lg font-medium text-foreground/70">No analytics yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Play some tracks from the Music Library to see your listening stats here</p>
+        </div>
+      </div>
+    );
+  }
+
+  const pieData = data.genreDistribution.map(g => ({ name: g.genre, value: g.percentage }));
 
   const stats = [
-    { label: 'Total Playback Hours', value: analytics.totalPlaybackHours.toLocaleString(undefined, { maximumFractionDigits: 1 }), icon: Clock, color: 'text-violet-400', bg: 'bg-violet-500/10' },
-    { label: 'Tracks Played', value: analytics.tracksGenerated.toLocaleString(), icon: Music, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Avg Satisfaction', value: `${analytics.avgSatisfactionScore}/5.0`, icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-    { label: 'Peak Hour', value: analytics.peakHour, icon: Zap, color: 'text-sky-400', bg: 'bg-sky-500/10' },
+    { label: 'Total Playback Hours', value: data.totalPlaybackHours.toLocaleString(undefined, { maximumFractionDigits: 1 }), icon: Clock, color: 'text-violet-400', bg: 'bg-violet-500/10' },
+    { label: 'Tracks Played', value: data.tracksPlayed.toLocaleString(), icon: Music, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Peak Hour', value: data.peakHour, icon: Zap, color: 'text-sky-400', bg: 'bg-sky-500/10' },
+    { label: 'Top Genre', value: data.genreDistribution[0]?.genre || '--', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   ];
 
   return (
     <div className="animate-slide-up">
-      <Header title="Analytics" description="Insights and performance metrics across all venues" />
+      <Header title="Analytics" description="Insights and performance metrics from your playback" />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -56,14 +71,15 @@ export default function AnalyticsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground/90">
               <BarChart3 className="w-5 h-5 text-violet-400" />
-              Weekly Playback Hours
+              Daily Playback Hours
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {data.dailyPlayback.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={analytics.dailyPlayback}>
+              <BarChart data={data.dailyPlayback}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
+                <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickFormatter={(v: string) => v.slice(5)} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-foreground)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
@@ -79,6 +95,9 @@ export default function AnalyticsPage() {
                 <Bar dataKey="hours" fill="url(#barGrad)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-10 text-xs text-muted-foreground">No daily data yet</div>
+            )}
           </CardContent>
         </Card>
 
@@ -91,11 +110,12 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {pieData.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center">
               <ResponsiveContainer width="100%" height={220} className="sm:!w-[60%] sm:!h-[280px]">
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                    {pieData.map((_, index) => (
+                    {pieData.map((_: { name: string; value: number }, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -103,7 +123,7 @@ export default function AnalyticsPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="w-full sm:w-[40%] space-y-2.5 mt-2 sm:mt-0">
-                {pieData.map((entry, index) => (
+                {pieData.map((entry: { name: string; value: number }, index: number) => (
                   <div key={entry.name} className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                     <span className="text-xs text-muted-foreground/80 truncate">{entry.name}</span>
@@ -112,69 +132,45 @@ export default function AnalyticsPage() {
                 ))}
               </div>
             </div>
+            ) : (
+              <div className="text-center py-10 text-xs text-muted-foreground">No genre data yet</div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Hourly Activity */}
-        <Card className="border-border/60 bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground/90">
-              <TrendingUp className="w-5 h-5 text-violet-400" />
-              Hourly Venue Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={analytics.hourlyActivity}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="hour" stroke="#6b7280" fontSize={11} />
-                <YAxis stroke="#6b7280" fontSize={12} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-foreground)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} />
-                <defs>
-                  <linearGradient id="colorVenues" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="venues" stroke="#8b5cf6" strokeWidth={2.5} fill="url(#colorVenues)" dot={{ fill: '#8b5cf6', r: 3, strokeWidth: 0 }} activeDot={{ fill: '#a78bfa', r: 5, strokeWidth: 2, stroke: '#8b5cf6' }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Venue Performance */}
-        <Card className="border-border/60 bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground/90">
-              <Zap className="w-5 h-5 text-violet-400" />
-              Venue Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {analytics.venueActivity.map((venue, i) => (
-                <div key={venue.venue}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium truncate text-foreground/80">{venue.venue}</span>
-                    <span className="text-xs text-muted-foreground/60 font-mono">{venue.hours.toLocaleString(undefined, { maximumFractionDigits: 1 })}h • {venue.tracks.toLocaleString()}</span>
-                  </div>
-                  <div className="w-full bg-foreground/[0.04] rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full transition-all"
-                      style={{
-                        width: `${(venue.hours / Math.max(...analytics.venueActivity.map(v => v.hours), 1)) * 100}%`,
-                        background: `linear-gradient(90deg, ${COLORS[i % COLORS.length]}, ${COLORS[i % COLORS.length]}88)`,
-                      }}
-                    />
-                  </div>
+      {/* Recent Tracks */}
+      <Card className="border-border/60 bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-foreground/90">
+            <Clock className="w-5 h-5 text-violet-400" />
+            Recent Plays
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.recentTracks.length > 0 ? (
+          <div className="space-y-2">
+            {data.recentTracks.map((track) => (
+              <div key={track.id} className="flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.02] hover:bg-foreground/[0.04] transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <Music className="w-4 h-4 text-violet-400" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate text-foreground/90">{track.trackTitle}</p>
+                  <p className="text-xs text-muted-foreground">{track.genre} • {track.source === 's3' ? 'S3 Library' : 'Venue'}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-mono text-muted-foreground">{Math.floor(track.durationSec / 60)}:{String(track.durationSec % 60).padStart(2, '0')}</p>
+                  <p className="text-[10px] text-muted-foreground/60">{new Date(track.playedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          ) : (
+            <div className="text-center py-10 text-xs text-muted-foreground">No recent plays</div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

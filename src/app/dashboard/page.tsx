@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAudio } from '@/hooks/useAudio';
+import { getAnalytics, ComputedAnalytics } from '@/lib/analytics-tracker';
 
 // ─── Weather types & helpers ─────────────────────────────────────
 interface WeatherData {
@@ -74,8 +75,17 @@ const MOODS = [
 
 export default function DashboardPage() {
   const { state, dispatch } = useAppState();
-  const { venues, playbackStates, analytics } = state;
+  const { venues, playbackStates } = state;
   const audio = useAudio();
+  const [realAnalytics, setRealAnalytics] = useState<ComputedAnalytics | null>(null);
+
+  // Load real analytics from localStorage on mount & refresh every 30s
+  useEffect(() => {
+    const load = () => setRealAnalytics(getAnalytics());
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ─── Weather & Mood state ──────────────────────────────────────
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -209,14 +219,14 @@ export default function DashboardPage() {
     },
     {
       label: 'Playback Hours',
-      value: analytics?.totalPlaybackHours?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+      value: realAnalytics?.totalPlaybackHours?.toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
       icon: Clock,
       color: 'text-warning',
       bg: 'bg-warning/10',
     },
     {
       label: 'Tracks Played',
-      value: analytics?.tracksGenerated?.toLocaleString() || '0',
+      value: realAnalytics?.tracksPlayed?.toLocaleString() || '0',
       icon: Zap,
       color: 'text-purple-400',
       bg: 'bg-purple-400/10',
@@ -363,40 +373,38 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!analytics ? (
+              {!realAnalytics || realAnalytics.tracksPlayed === 0 ? (
                 <div className="text-center py-6">
                   <TrendingUp className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
                   <p className="text-xs text-muted-foreground">No performance data yet</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-1">Play some tracks to see stats here</p>
                 </div>
               ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground/80">Avg. Satisfaction</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-emerald-400">{analytics.avgSatisfactionScore}</span>
-                    <span className="text-xs text-muted-foreground/50">/5.0</span>
-                  </div>
+                  <span className="text-sm text-muted-foreground/80">Total Hours</span>
+                  <span className="text-lg font-bold text-emerald-400">{realAnalytics.totalPlaybackHours}h</span>
                 </div>
                 <div className="w-full bg-foreground/[0.04] rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-emerald-300 h-2 rounded-full transition-all shadow-sm shadow-emerald-400/20"
-                    style={{ width: `${((analytics.avgSatisfactionScore || 0) / 5) * 100}%` }}
+                    style={{ width: `${Math.min((realAnalytics.totalPlaybackHours / 10) * 100, 100)}%` }}
                   />
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm text-muted-foreground/80">Peak Hour</span>
-                  <span className="text-sm font-medium text-foreground/80">{analytics.peakHour}</span>
+                  <span className="text-sm font-medium text-foreground/80">{realAnalytics.peakHour}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground/80">Tracks Played</span>
+                  <span className="text-sm font-medium text-foreground/80">{realAnalytics.tracksPlayed}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground/80">Active Venues</span>
                   <span className="text-sm font-medium text-foreground/80">{activeVenues.length}/{venues.length}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground/80">Last Sync</span>
-                  <span className="text-xs font-medium text-muted-foreground/60">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
               )}
@@ -541,14 +549,14 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!analytics?.genreDistribution?.length ? (
+              {!realAnalytics?.genreDistribution?.length ? (
                 <div className="text-center py-6">
                   <Waves className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
                   <p className="text-xs text-muted-foreground">No genre data yet</p>
                 </div>
               ) : (
               <div className="space-y-3.5">
-                {analytics.genreDistribution.slice(0, 5).map((genre, i) => (
+                {realAnalytics.genreDistribution.slice(0, 5).map((genre: { genre: string; percentage: number }, i: number) => (
                   <div key={genre.genre}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm text-foreground/80">{genre.genre}</span>

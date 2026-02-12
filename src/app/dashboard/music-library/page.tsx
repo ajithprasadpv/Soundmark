@@ -17,6 +17,7 @@ import {
   Volume2, VolumeX, Square, SkipForward,
 } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
+import { logPlay } from '@/lib/analytics-tracker';
 
 interface S3Track {
   key: string;
@@ -84,19 +85,35 @@ export default function MusicLibraryPage() {
   const [s3Muted, setS3Muted] = useState(false);
   const [s3Volume, setS3Volume] = useState(0.8);
   const s3ProgressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const s3PlayStartTime = useRef<number>(0);
 
   const stopS3Playback = useCallback(() => {
+    // Log the play event before stopping
+    if (s3AudioEl && s3SelectedTrack && s3PlayStartTime.current > 0) {
+      const listenedSec = Math.round(s3AudioEl.currentTime || 0);
+      if (listenedSec > 2) { // only log if listened > 2 seconds
+        logPlay({
+          trackTitle: s3SelectedTrack.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
+          artist: 'Unknown',
+          genre: s3SelectedTrack.genre || 'Unknown',
+          language: s3SelectedTrack.language,
+          source: 's3',
+          durationSec: listenedSec,
+        });
+      }
+    }
     if (s3AudioEl) {
       s3AudioEl.pause();
       s3AudioEl.src = '';
     }
     if (s3ProgressInterval.current) clearInterval(s3ProgressInterval.current);
+    s3PlayStartTime.current = 0;
     setS3PlayingKey(null);
     setS3AudioEl(null);
     setS3Progress(0);
     setS3CurrentTime(0);
     setS3Duration(0);
-  }, [s3AudioEl]);
+  }, [s3AudioEl, s3SelectedTrack]);
 
   const fetchS3Tracks = useCallback(async () => {
     setS3Loading(true);
@@ -138,6 +155,7 @@ export default function MusicLibraryPage() {
     el.onloadedmetadata = () => setS3Duration(el.duration);
     el.onended = () => stopS3Playback();
     el.play();
+    s3PlayStartTime.current = Date.now();
     setS3AudioEl(el);
     setS3PlayingKey(track.key);
     setS3SelectedTrack(track);
