@@ -99,18 +99,35 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const reverseGeocode = useCallback(async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=16&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      const addr = data.address || {};
+      // Build precise location: neighbourhood/suburb, city
+      const neighbourhood = addr.neighbourhood || addr.suburb || addr.quarter || '';
+      const city = addr.city || addr.town || addr.village || addr.county || '';
+      if (neighbourhood && city) {
+        setLocationName(`${neighbourhood}, ${city}`);
+      } else if (city) {
+        setLocationName(city);
+      } else {
+        setLocationName(data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location');
+      }
+    } catch {
+      setLocationName('Your Location');
+    }
+  }, []);
+
   useEffect(() => {
     // Prioritize browser geolocation for accurate local weather
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          // Reverse geocode city name from coordinates
-          fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m&timezone=auto`)
-            .then(r => r.json())
-            .then(d => {
-              setLocationName(d.timezone?.replace(/_/g, ' ').split('/').pop() || 'Your Location');
-            })
-            .catch(() => setLocationName('Your Location'));
+          reverseGeocode(pos.coords.latitude, pos.coords.longitude);
           fetchWeather(pos.coords.latitude, pos.coords.longitude);
         },
         () => {
@@ -120,25 +137,24 @@ export default function DashboardPage() {
             setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
             fetchWeather(firstVenue.latitude, firstVenue.longitude);
           } else {
-            setLocationName('Bangalore, KA');
+            setLocationName('Bangalore');
             fetchWeather(12.9716, 77.5946);
           }
         },
-        { timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
-      // No geolocation API — fall back to first venue
       const firstVenue = venues.find(v => v.latitude && v.longitude);
       if (firstVenue?.latitude && firstVenue?.longitude) {
         setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
         fetchWeather(firstVenue.latitude, firstVenue.longitude);
       } else {
-        setLocationName('Bangalore, KA');
+        setLocationName('Bangalore');
         fetchWeather(12.9716, 77.5946);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchWeather]);
+  }, [fetchWeather, reverseGeocode]);
 
   const activeVenues = venues.filter((v) => v.status === 'active');
   const playingVenues = Object.values(playbackStates).filter((p) => p.isPlaying);
