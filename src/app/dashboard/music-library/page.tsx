@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,36 @@ import {
   Library, Upload, Play, Pause, Trash2, X, Search, Filter,
   Music, Clock, Shield, Crown, Lock, Unlock, MoreVertical,
   FileAudio, Tag, Disc3, ChevronDown, Plus, Edit, Eye,
+  HardDrive, RefreshCw, Globe, FolderOpen, Loader2,
 } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
+
+interface S3Track {
+  key: string;
+  size: number;
+  lastModified: string;
+  language: string;
+  genre: string;
+  filename: string;
+  streamUrl: string;
+  languageName: string;
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  hi: 'Hindi',
+  es: 'Spanish',
+  ar: 'Arabic',
+  af: 'African',
+  'in-regional': 'Indian Regional',
+  'in-instrumental': 'Indian Instrumental',
+};
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const allGenres = ['jazz', 'lounge', 'ambient', 'electronic', 'deep house', 'chill', 'classical', 'acoustic', 'folk', 'indie', 'soul', 'bossa nova', 'nature', 'meditation'];
 
@@ -29,6 +57,7 @@ export default function MusicLibraryPage() {
   const { musicLibrary, musicCategories } = state;
   const audio = useAudio();
 
+  const [activeTab, setActiveTab] = useState<'catalog' | 's3'>('s3');
   const [filterLicense, setFilterLicense] = useState<'all' | LicenseType>('all');
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
@@ -37,6 +66,59 @@ export default function MusicLibraryPage() {
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+
+  // S3 Library state
+  const [s3Tracks, setS3Tracks] = useState<S3Track[]>([]);
+  const [s3Loading, setS3Loading] = useState(false);
+  const [s3Error, setS3Error] = useState<string | null>(null);
+  const [s3Language, setS3Language] = useState<string>('');
+  const [s3Genre, setS3Genre] = useState<string>('');
+  const [s3Search, setS3Search] = useState('');
+  const [s3SelectedTrack, setS3SelectedTrack] = useState<S3Track | null>(null);
+  const [s3PlayingKey, setS3PlayingKey] = useState<string | null>(null);
+  const [s3AudioEl, setS3AudioEl] = useState<HTMLAudioElement | null>(null);
+
+  const fetchS3Tracks = useCallback(async () => {
+    setS3Loading(true);
+    setS3Error(null);
+    try {
+      const params = new URLSearchParams();
+      if (s3Language) params.set('language', s3Language);
+      if (s3Genre) params.set('genre', s3Genre);
+      params.set('limit', '200');
+      const res = await fetch(`/api/music/library?${params.toString()}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      setS3Tracks(json.data.tracks || []);
+    } catch (err: unknown) {
+      setS3Error(err instanceof Error ? err.message : 'Failed to fetch S3 tracks');
+    } finally {
+      setS3Loading(false);
+    }
+  }, [s3Language, s3Genre]);
+
+  useEffect(() => {
+    if (activeTab === 's3') fetchS3Tracks();
+  }, [activeTab, fetchS3Tracks]);
+
+  const playS3Track = (track: S3Track) => {
+    if (s3PlayingKey === track.key) {
+      s3AudioEl?.pause();
+      setS3PlayingKey(null);
+      setS3AudioEl(null);
+      return;
+    }
+    s3AudioEl?.pause();
+    const el = new Audio(track.streamUrl);
+    el.play();
+    el.onended = () => { setS3PlayingKey(null); setS3AudioEl(null); };
+    setS3AudioEl(el);
+    setS3PlayingKey(track.key);
+  };
+
+  const filteredS3Tracks = s3Search
+    ? s3Tracks.filter(t => t.filename.toLowerCase().includes(s3Search.toLowerCase()) || t.genre.toLowerCase().includes(s3Search.toLowerCase()))
+    : s3Tracks;
 
   const [newTrack, setNewTrack] = useState({
     title: '', artist: '', genre: 'ambient', licenseType: 'copyright-free' as LicenseType,
@@ -125,6 +207,198 @@ export default function MusicLibraryPage() {
     <div className="animate-slide-up">
       <Header title="Music Library" description="Manage your music catalog — upload, categorize, and control access" />
 
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-1 mb-6 bg-muted/50 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setActiveTab('s3')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${activeTab === 's3' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <HardDrive className="w-4 h-4" /> S3 Library
+          {s3Tracks.length > 0 && <Badge variant="outline" className="text-[10px] ml-1">{s3Tracks.length}</Badge>}
+        </button>
+        <button
+          onClick={() => setActiveTab('catalog')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${activeTab === 'catalog' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Library className="w-4 h-4" /> Mock Catalog
+          <Badge variant="outline" className="text-[10px] ml-1">{musicLibrary.length}</Badge>
+        </button>
+      </div>
+
+      {/* ═══════════════ S3 LIBRARY TAB ═══════════════ */}
+      {activeTab === 's3' && (
+        <div>
+          {/* S3 Filters */}
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Search files..." value={s3Search} onChange={e => setS3Search(e.target.value)} className="pl-9 w-full sm:w-56 bg-muted border-0" />
+              </div>
+              <Select value={s3Language} onChange={e => { setS3Language(e.target.value); setS3Genre(''); }} className="w-36 sm:w-44">
+                <option value="">All Languages</option>
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </Select>
+              {s3Language && (
+                <Select value={s3Genre} onChange={e => setS3Genre(e.target.value)} className="w-32 sm:w-40">
+                  <option value="">All Genres</option>
+                </Select>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={fetchS3Tracks} disabled={s3Loading}>
+                <RefreshCw className={`w-4 h-4 sm:mr-2 ${s3Loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* S3 Error */}
+          {s3Error && (
+            <Card className="mb-4 border-destructive/30">
+              <CardContent className="p-4 text-sm text-destructive flex items-center gap-2">
+                <X className="w-4 h-4 shrink-0" /> {s3Error}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* S3 Loading */}
+          {s3Loading && (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-primary mr-3" />
+              <span className="text-muted-foreground">Loading tracks from S3...</span>
+            </div>
+          )}
+
+          {/* S3 Tracks Grid */}
+          {!s3Loading && filteredS3Tracks.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardContent className="p-0 overflow-x-auto">
+                    <div className="min-w-[500px]">
+                      {/* Header */}
+                      <div className="grid grid-cols-[1fr_100px_100px_80px] gap-2 px-4 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <span>File</span>
+                        <span>Language</span>
+                        <span>Genre</span>
+                        <span className="text-right">Size</span>
+                      </div>
+                      {/* Rows */}
+                      <div className="divide-y divide-border">
+                        {filteredS3Tracks.map(track => (
+                          <div
+                            key={track.key}
+                            className={`grid grid-cols-[1fr_100px_100px_80px] gap-2 px-4 py-3 items-center hover:bg-muted/50 transition-colors cursor-pointer ${s3SelectedTrack?.key === track.key ? 'bg-primary/5' : ''}`}
+                            onClick={() => setS3SelectedTrack(track)}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); playS3Track(track); }}
+                                className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors cursor-pointer"
+                              >
+                                {s3PlayingKey === track.key ? (
+                                  <Pause className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <Play className="w-4 h-4 text-muted-foreground" />
+                                )}
+                              </button>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{track.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')}</p>
+                                <p className="text-xs text-muted-foreground truncate">{track.key}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="text-sm text-muted-foreground truncate">{LANGUAGE_LABELS[track.language] || track.language}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground capitalize truncate">{track.genre}</span>
+                            <span className="text-sm text-muted-foreground text-right font-mono">{formatFileSize(track.size)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* S3 Track Detail */}
+              <div>
+                {s3SelectedTrack ? (
+                  <Card className="sticky top-8">
+                    <CardHeader>
+                      <CardTitle className="text-base">Track Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-purple-400/20 flex items-center justify-center">
+                          <FileAudio className="w-7 h-7 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold truncate">{s3SelectedTrack.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-muted-foreground truncate">{s3SelectedTrack.key}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="p-2.5 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">Language</p>
+                          <p className="font-medium">{LANGUAGE_LABELS[s3SelectedTrack.language] || s3SelectedTrack.language}</p>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">Genre</p>
+                          <p className="font-medium capitalize">{s3SelectedTrack.genre}</p>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">File Size</p>
+                          <p className="font-medium">{formatFileSize(s3SelectedTrack.size)}</p>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">Modified</p>
+                          <p className="font-medium">{new Date(s3SelectedTrack.lastModified).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Button className="w-full" onClick={() => playS3Track(s3SelectedTrack)}>
+                        {s3PlayingKey === s3SelectedTrack.key ? <><Pause className="w-4 h-4 mr-2" /> Pause</> : <><Play className="w-4 h-4 mr-2" /> Play</>}
+                      </Button>
+                      <a href={s3SelectedTrack.streamUrl} target="_blank" rel="noopener noreferrer" className="block">
+                        <Button variant="outline" className="w-full">
+                          <FolderOpen className="w-4 h-4 mr-2" /> Open Stream URL
+                        </Button>
+                      </a>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="sticky top-8">
+                    <CardContent className="p-8 text-center text-muted-foreground">
+                      <HardDrive className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">Select a track to view details</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* S3 Empty State */}
+          {!s3Loading && !s3Error && filteredS3Tracks.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center text-muted-foreground">
+                <HardDrive className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                <p className="text-lg font-medium mb-1">No tracks in S3</p>
+                <p className="text-sm">Upload songs using the CLI script or the upload API</p>
+                <code className="block mt-3 text-xs bg-muted rounded-lg p-3 text-left max-w-md mx-auto">
+                  ./scripts/bulk-upload.sh ~/soundmark-songs
+                </code>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════ MOCK CATALOG TAB ═══════════════ */}
+      {activeTab === 'catalog' && (<div>
       {/* Category Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <Card className="hover:border-primary/30 transition-colors">
@@ -390,6 +664,7 @@ export default function MusicLibraryPage() {
           )}
         </div>
       </div>
+      </div>)}
 
       {/* Upload Modal */}
       {showUpload && (
