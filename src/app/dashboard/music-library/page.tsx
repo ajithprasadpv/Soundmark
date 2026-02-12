@@ -453,7 +453,7 @@ export default function MusicLibraryPage() {
               <div className="fixed bottom-0 left-0 right-0 z-50 lg:left-64 bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-2xl shadow-black/20">
                 {/* Progress bar — clickable to seek */}
                 <div
-                  className="h-1 bg-muted cursor-pointer group relative"
+                  className="h-2 bg-muted cursor-pointer group relative"
                   onClick={seekS3}
                 >
                   <div
@@ -461,16 +461,16 @@ export default function MusicLibraryPage() {
                     style={{ width: `${s3Progress}%` }}
                   />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md border-2 border-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-md border-2 border-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ left: `${s3Progress}%`, marginLeft: '-6px' }}
                   />
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-2.5">
+                <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-3.5">
                   {/* Track info */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center shrink-0">
-                      <Music className="w-5 h-5 text-violet-400" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center shrink-0">
+                      <Music className="w-6 h-6 text-violet-400" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{nowPlaying.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')}</p>
@@ -488,7 +488,7 @@ export default function MusicLibraryPage() {
                     {/* Play/Pause */}
                     <button
                       onClick={() => playS3Track(nowPlaying)}
-                      className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors cursor-pointer shadow-md shadow-violet-500/30"
+                      className="w-10 h-10 rounded-full bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors cursor-pointer shadow-md shadow-violet-500/30"
                     >
                       {s3AudioEl?.paused ? <Play className="w-4 h-4 ml-0.5" /> : <Pause className="w-4 h-4" />}
                     </button>
