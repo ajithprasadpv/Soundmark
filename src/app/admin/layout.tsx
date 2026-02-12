@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Waves, Shield, LayoutDashboard, Users, LogOut, ChevronRight, Receipt } from 'lucide-react';
-import { verifyToken } from '@/lib/auth';
+
+// Client-safe JWT payload decoder (no verification — auth is checked server-side on API calls)
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
 
 const adminNavItems = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -23,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.replace('/login');
       return;
     }
-    const decoded = verifyToken(token);
+    const decoded = decodeJwtPayload(token);
     if (!decoded || decoded.role !== 'super_admin') {
       setAuthorized(false);
       return;
