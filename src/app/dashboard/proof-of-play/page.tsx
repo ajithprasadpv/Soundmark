@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockProofOfPlayReports, MonthlyReport, ProofOfPlayEntry } from '@/lib/mock-data';
+import { MonthlyReport, ProofOfPlayEntry } from '@/lib/mock-data';
 import {
   FileText, Download, Calendar, Clock, Music, MapPin,
   ChevronDown, ChevronRight, Filter, Search, CheckCircle2,
@@ -15,12 +15,25 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ProofOfPlayPage() {
-  const reports = mockProofOfPlayReports;
-  const [selectedReport, setSelectedReport] = useState<MonthlyReport>(reports[reports.length - 1]);
+  const reports: MonthlyReport[] = [];
+  const [selectedReport, setSelectedReport] = useState<MonthlyReport | null>(reports[reports.length - 1] ?? null);
   const [venueFilter, setVenueFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedVenue, setExpandedVenue] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+
+  if (!selectedReport || reports.length === 0) {
+    return (
+      <div className="animate-slide-up">
+        <Header title="Proof of Play" description="Verified playback reports for licensing compliance" />
+        <div className="text-center py-20">
+          <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+          <p className="text-lg font-medium text-foreground/70">No reports yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Playback reports will appear here once venues start streaming music</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredEntries = useMemo(() => {
     let entries = selectedReport.entries;

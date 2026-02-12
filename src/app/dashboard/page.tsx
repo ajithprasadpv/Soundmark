@@ -245,6 +245,16 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent>
+              {activeVenues.length === 0 ? (
+                <div className="text-center py-10">
+                  <MapPin className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-sm font-medium text-foreground/70">No venues yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add your first venue to start streaming ambient music</p>
+                  <Link href="/dashboard/venues">
+                    <Button size="sm" className="mt-4">Add Venue</Button>
+                  </Link>
+                </div>
+              ) : (
               <div className="space-y-2">
                 {activeVenues.map((venue) => {
                   const playback = playbackStates[venue.id];
@@ -321,6 +331,7 @@ export default function DashboardPage() {
                   );
                 })}
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -336,24 +347,30 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {!analytics ? (
+                <div className="text-center py-6">
+                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No performance data yet</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground/80">Avg. Satisfaction</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-emerald-400">{analytics?.avgSatisfactionScore}</span>
+                    <span className="text-lg font-bold text-emerald-400">{analytics.avgSatisfactionScore}</span>
                     <span className="text-xs text-muted-foreground/50">/5.0</span>
                   </div>
                 </div>
                 <div className="w-full bg-foreground/[0.04] rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-emerald-300 h-2 rounded-full transition-all shadow-sm shadow-emerald-400/20"
-                    style={{ width: `${((analytics?.avgSatisfactionScore || 0) / 5) * 100}%` }}
+                    style={{ width: `${((analytics.avgSatisfactionScore || 0) / 5) * 100}%` }}
                   />
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm text-muted-foreground/80">Peak Hour</span>
-                  <span className="text-sm font-medium text-foreground/80">{analytics?.peakHour}</span>
+                  <span className="text-sm font-medium text-foreground/80">{analytics.peakHour}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -366,6 +383,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-medium text-muted-foreground/60">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -507,8 +525,14 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {!analytics?.genreDistribution?.length ? (
+                <div className="text-center py-6">
+                  <Waves className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No genre data yet</p>
+                </div>
+              ) : (
               <div className="space-y-3.5">
-                {analytics?.genreDistribution.slice(0, 5).map((genre, i) => (
+                {analytics.genreDistribution.slice(0, 5).map((genre, i) => (
                   <div key={genre.genre}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm text-foreground/80">{genre.genre}</span>
@@ -526,6 +550,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
