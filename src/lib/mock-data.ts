@@ -1,4 +1,4 @@
-import { User, Organization, Venue, VenueConfiguration, Track, EnvironmentData, Schedule, AnalyticsData, PlaybackState, MusicTrack, MusicCategory, CustomerMusicMapping, MusicSource } from '@/types';
+import { User, Organization, Venue, VenueConfiguration, Track, EnvironmentData, Schedule, AnalyticsData, PlaybackState, MusicTrack, MusicCategory, CustomerMusicMapping, MusicSource, UserRole, UserStatus, PlanType, SubscriptionStatus } from '@/types';
 
 // ─── User & Organization ────────────────────────────────────────
 
@@ -21,6 +21,152 @@ export const mockOrganization: Organization = {
   subscriptionStatus: 'active',
   createdAt: '2025-09-12T10:00:00Z',
 };
+
+// ─── Admin User Profiles (for Super Admin Console) ──────────────
+
+export interface AdminUserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  organizationId: string;
+  organizationName: string;
+  planType: PlanType;
+  subscriptionStatus: SubscriptionStatus;
+  venueCount: number;
+  createdAt: string;
+  lastActive: string;
+}
+
+export const mockAdminUsers: AdminUserProfile[] = [
+  {
+    id: '1',
+    name: 'Ajith Prasad',
+    email: 'ajith.prasad@ajluxury.com',
+    role: 'owner',
+    status: 'active',
+    organizationId: '1',
+    organizationName: 'Aj Luxury',
+    planType: 'professional',
+    subscriptionStatus: 'active',
+    venueCount: 8,
+    createdAt: '2025-09-12T10:00:00Z',
+    lastActive: '2026-02-12T09:15:00Z',
+  },
+  {
+    id: '2',
+    name: 'Sarah Chen',
+    email: 'sarah.chen@sunrisecafe.com',
+    role: 'owner',
+    status: 'active',
+    organizationId: '2',
+    organizationName: 'Sunrise Cafe Chain',
+    planType: 'starter',
+    subscriptionStatus: 'active',
+    venueCount: 4,
+    createdAt: '2025-10-20T10:00:00Z',
+    lastActive: '2026-02-11T16:42:00Z',
+  },
+  {
+    id: '3',
+    name: 'James Whitfield',
+    email: 'j.whitfield@pinnaclehotels.com',
+    role: 'owner',
+    status: 'active',
+    organizationId: '3',
+    organizationName: 'Pinnacle Hotels International',
+    planType: 'enterprise',
+    subscriptionStatus: 'active',
+    venueCount: 42,
+    createdAt: '2025-08-10T10:00:00Z',
+    lastActive: '2026-02-12T08:30:00Z',
+  },
+  {
+    id: '4',
+    name: 'Marcus Rivera',
+    email: 'm.rivera@pinnaclehotels.com',
+    role: 'manager',
+    status: 'active',
+    organizationId: '3',
+    organizationName: 'Pinnacle Hotels International',
+    planType: 'enterprise',
+    subscriptionStatus: 'active',
+    venueCount: 12,
+    createdAt: '2025-08-15T10:00:00Z',
+    lastActive: '2026-02-11T22:10:00Z',
+  },
+  {
+    id: '5',
+    name: 'Priya Sharma',
+    email: 'priya@fitzone.io',
+    role: 'owner',
+    status: 'active',
+    organizationId: '4',
+    organizationName: 'FitZone Gyms',
+    planType: 'professional',
+    subscriptionStatus: 'active',
+    venueCount: 11,
+    createdAt: '2025-11-01T10:00:00Z',
+    lastActive: '2026-02-10T14:55:00Z',
+  },
+  {
+    id: '6',
+    name: 'David Kim',
+    email: 'david.k@fitzone.io',
+    role: 'staff',
+    status: 'active',
+    organizationId: '4',
+    organizationName: 'FitZone Gyms',
+    planType: 'professional',
+    subscriptionStatus: 'active',
+    venueCount: 0,
+    createdAt: '2025-11-10T10:00:00Z',
+    lastActive: '2026-02-09T11:20:00Z',
+  },
+  {
+    id: '7',
+    name: 'Elena Moss',
+    email: 'elena@tranquilspas.com',
+    role: 'owner',
+    status: 'active',
+    organizationId: '5',
+    organizationName: 'Tranquil Spas',
+    planType: 'starter',
+    subscriptionStatus: 'trial',
+    venueCount: 2,
+    createdAt: '2026-01-15T10:00:00Z',
+    lastActive: '2026-02-12T07:45:00Z',
+  },
+  {
+    id: '8',
+    name: 'Tom Gallagher',
+    email: 'tom.g@oldirish.pub',
+    role: 'owner',
+    status: 'suspended',
+    organizationId: '6',
+    organizationName: 'Old Irish Pub Group',
+    planType: 'starter',
+    subscriptionStatus: 'cancelled',
+    venueCount: 3,
+    createdAt: '2025-07-22T10:00:00Z',
+    lastActive: '2025-12-14T19:30:00Z',
+  },
+  {
+    id: '9',
+    name: 'Nina Patel',
+    email: 'nina@luxevents.co',
+    role: 'manager',
+    status: 'inactive',
+    organizationId: '7',
+    organizationName: 'Luxe Events Co.',
+    planType: 'professional',
+    subscriptionStatus: 'cancelled',
+    venueCount: 5,
+    createdAt: '2025-09-30T10:00:00Z',
+    lastActive: '2026-01-02T10:00:00Z',
+  },
+];
 
 // ─── Venues ─────────────────────────────────────────────────────
 // 8 venues across SF — real addresses, accurate lat/lng, realistic configs
@@ -217,7 +363,7 @@ export const mockAnalytics: AnalyticsData = {
 
 // ─── Auth Database ──────────────────────────────────────────────
 
-export const mockUsersDB: Array<{ id: string; email: string; name: string; passwordHash: string; role: 'admin' | 'owner' | 'manager' | 'staff'; status: 'active' | 'inactive' | 'suspended'; organizationId: string }> = [
+export const mockUsersDB: Array<{ id: string; email: string; name: string; passwordHash: string; role: 'super_admin' | 'admin' | 'owner' | 'manager' | 'staff'; status: 'active' | 'inactive' | 'suspended'; organizationId: string }> = [
   {
     id: '1',
     email: 'admin@soundmark.app',
@@ -226,6 +372,15 @@ export const mockUsersDB: Array<{ id: string; email: string; name: string; passw
     role: 'owner',
     status: 'active',
     organizationId: '1',
+  },
+  {
+    id: 'sa-1',
+    email: 'superadmin@soundmark.app',
+    name: 'Super Admin',
+    passwordHash: '$2b$12$eImiTXuWVxfM37uY4JANjQ==',
+    role: 'super_admin',
+    status: 'active',
+    organizationId: '0',
   },
 ];
 

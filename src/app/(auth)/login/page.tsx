@@ -36,7 +36,11 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('soundmark_token', data.data.accessToken);
-      router.push('/dashboard');
+      if (data.data.user?.role === 'super_admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch {
       setError('Network error. Please try again.');
       setLoading(false);
@@ -129,9 +133,17 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-              <p><strong>Email:</strong> admin@soundmark.app</p>
-              <p><strong>Password:</strong> Admin@123</p>
+            <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-2">
+              <div>
+                <p className="font-semibold text-foreground/70 mb-0.5">Regular User</p>
+                <p><strong>Email:</strong> admin@soundmark.app</p>
+                <p><strong>Password:</strong> Admin@123</p>
+              </div>
+              <div className="border-t border-border pt-2">
+                <p className="font-semibold text-amber-500/80 mb-0.5">Super Admin</p>
+                <p><strong>Email:</strong> superadmin@soundmark.app</p>
+                <p><strong>Password:</strong> Admin@123</p>
+              </div>
             </div>
           </form>
         </CardContent>

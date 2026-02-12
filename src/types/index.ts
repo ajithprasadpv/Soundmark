@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'owner' | 'manager' | 'staff';
+export type UserRole = 'super_admin' | 'admin' | 'owner' | 'manager' | 'staff';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type PlanType = 'starter' | 'professional' | 'enterprise';
 export type SubscriptionStatus = 'trial' | 'active' | 'cancelled';

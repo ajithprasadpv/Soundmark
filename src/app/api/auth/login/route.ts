@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { hashPassword, verifyPassword, generateAccessToken, generateRefreshToken } from '@/lib/auth';
+import { generateAccessToken, generateRefreshToken } from '@/lib/auth';
 
-const DEMO_EMAIL = 'admin@soundmark.app';
-const DEMO_PASSWORD = 'Admin@123';
+const DEMO_USERS = [
+  { email: 'admin@soundmark.app', password: 'Admin@123', id: '1', name: 'Ajith Prasad', role: 'owner' as const },
+  { email: 'superadmin@soundmark.app', password: 'Admin@123', id: 'sa-1', name: 'Super Admin', role: 'super_admin' as const },
+];
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +17,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demo authentication
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      const user = { id: '1', email: DEMO_EMAIL, name: 'Alex Morgan', role: 'owner' as const };
+    const match = DEMO_USERS.find(u => u.email === email && u.password === password);
+    if (match) {
+      const user = { id: match.id, email: match.email, name: match.name, role: match.role };
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
 
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
       { error: { code: 'AUTH_ERROR', message: 'Invalid email or password' } },
       { status: 401 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Login failed' } },
       { status: 500 }
