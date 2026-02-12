@@ -6,23 +6,21 @@ import { Input } from '@/components/ui/input';
 import { useSidebar } from '@/components/sidebar-context';
 
 export function Header({ title, description }: { title: string; description?: string }) {
-  const { isMobile, toggleOpen } = useSidebar();
+  const { toggleOpen } = useSidebar();
 
   return (
     <header className="flex items-center justify-between pb-6 sm:pb-8 gap-4">
       <div className="flex items-center gap-3 min-w-0">
-        {/* Mobile hamburger menu */}
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 rounded-xl hover:bg-foreground/[0.04]"
-            onClick={toggleOpen}
-            aria-label="Open navigation menu"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-        )}
+        {/* Hamburger menu: visible below lg via CSS, no JS needed for show/hide */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 rounded-xl hover:bg-foreground/[0.04] lg:hidden"
+          onClick={toggleOpen}
+          aria-label="Open navigation menu"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>
           {description && <p className="text-xs sm:text-[13px] text-muted-foreground/60 mt-1 truncate">{description}</p>}

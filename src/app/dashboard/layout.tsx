@@ -9,10 +9,13 @@ import { useAppState } from '@/lib/store';
 import { mockUser, mockVenues, mockPlaybackStates, mockEnvironmentData, mockSchedules, mockAnalytics, mockMusicLibrary, mockMusicCategories, mockCustomerMappings, mockMusicSources } from '@/lib/mock-data';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { isCollapsed, isMobile } = useSidebar();
+  const { isCollapsed, isMobile, hydrated } = useSidebar();
 
-  // Compute main content margin based on sidebar state
-  const mainMargin = isMobile ? 'ml-0' : isCollapsed ? 'ml-[72px]' : 'ml-64';
+  // Before hydration: use CSS media query (ml-0 on mobile, ml-64 on lg+)
+  // After hydration: use JS state for interactive behavior
+  const mainMargin = hydrated
+    ? (isMobile ? 'ml-0' : isCollapsed ? 'ml-[72px]' : 'ml-64')
+    : 'ml-0 lg:ml-64';
 
   return (
     <div className="min-h-screen noise-bg">

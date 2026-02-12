@@ -3,12 +3,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 interface SidebarContextType {
-  isOpen: boolean;        // mobile drawer open
+  isOpen: boolean;        // mobile drawer open (toggled by hamburger)
   isCollapsed: boolean;   // desktop icon-only mode
   setIsOpen: (open: boolean) => void;
   toggleOpen: () => void;
   toggleCollapsed: () => void;
   isMobile: boolean;
+  hydrated: boolean;      // true after first client render
 }
 
 const SidebarContext = createContext<SidebarContextType>({
@@ -18,12 +19,14 @@ const SidebarContext = createContext<SidebarContextType>({
   toggleOpen: () => {},
   toggleCollapsed: () => {},
   isMobile: false,
+  hydrated: false,
 });
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -36,6 +39,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     };
 
     checkMobile();
+    setHydrated(true);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -44,7 +48,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const toggleCollapsed = useCallback(() => setIsCollapsed(prev => !prev), []);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, isCollapsed, setIsOpen, toggleOpen, toggleCollapsed, isMobile }}>
+    <SidebarContext.Provider value={{ isOpen, isCollapsed, setIsOpen, toggleOpen, toggleCollapsed, isMobile, hydrated }}>
       {children}
     </SidebarContext.Provider>
   );

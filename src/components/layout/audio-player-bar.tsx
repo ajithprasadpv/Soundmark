@@ -21,7 +21,7 @@ export function AudioPlayerBar() {
   const { state, dispatch } = useAppState();
   const { venues, playbackStates, favorites, playlists } = state;
   const audio = useAudio();
-  const { isCollapsed, isMobile } = useSidebar();
+  const { isCollapsed, isMobile, hydrated } = useSidebar();
   const [panelView, setPanelView] = useState<PanelView>('none');
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
@@ -54,8 +54,10 @@ export function AudioPlayerBar() {
   const currentTrackId = npInfo ? `${trackSource}-${trackName}-${artistName}`.replace(/\s+/g, '-').toLowerCase() : '';
   const isFavorited = favorites.some(f => f.trackId === currentTrackId);
 
-  // Compute responsive left offset
-  const leftOffset = isMobile ? 'left-0' : isCollapsed ? 'left-[72px]' : 'left-64';
+  // Compute responsive left offset — CSS-first for initial paint, JS after hydration
+  const leftOffset = hydrated
+    ? (isMobile ? 'left-0' : isCollapsed ? 'left-[72px]' : 'left-64')
+    : 'left-0 lg:left-64';
 
   const toggleFavorite = () => {
     if (!npInfo) return;
