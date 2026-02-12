@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MonthlyReport, ProofOfPlayEntry } from '@/lib/mock-data';
+import { mockProofOfPlayReports, MonthlyReport, ProofOfPlayEntry } from '@/lib/mock-data';
 import {
   FileText, Download, Calendar, Clock, Music, MapPin,
   ChevronDown, ChevronRight, Filter, Search, CheckCircle2,
@@ -15,7 +15,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ProofOfPlayPage() {
-  const reports: MonthlyReport[] = [];
+  const reports = mockProofOfPlayReports;
   const [selectedReport, setSelectedReport] = useState<MonthlyReport | null>(reports[reports.length - 1] ?? null);
   const [venueFilter, setVenueFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');

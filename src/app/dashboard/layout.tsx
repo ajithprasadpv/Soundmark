@@ -6,6 +6,11 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { AudioPlayerBar } from '@/components/layout/audio-player-bar';
 import { SidebarProvider, useSidebar } from '@/components/sidebar-context';
 import { useAppState } from '@/lib/store';
+import {
+  mockUser, mockVenues, mockPlaybackStates, mockEnvironmentData,
+  mockSchedules, mockMusicLibrary, mockMusicCategories,
+  mockCustomerMappings, mockMusicSources,
+} from '@/lib/mock-data';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, isMobile, hydrated } = useSidebar();
@@ -33,7 +38,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!state.isAuthenticated) {
+      dispatch({ type: 'SET_USER', payload: mockUser });
       dispatch({ type: 'SET_AUTHENTICATED', payload: true });
+      dispatch({ type: 'SET_VENUES', payload: mockVenues });
+      dispatch({ type: 'SET_SCHEDULES', payload: mockSchedules });
+      dispatch({ type: 'SET_ENVIRONMENT', payload: mockEnvironmentData });
+      dispatch({ type: 'SET_MUSIC_LIBRARY', payload: mockMusicLibrary });
+      dispatch({ type: 'SET_MUSIC_CATEGORIES', payload: mockMusicCategories });
+      dispatch({ type: 'SET_CUSTOMER_MAPPINGS', payload: mockCustomerMappings });
+      dispatch({ type: 'SET_MUSIC_SOURCES', payload: mockMusicSources });
+      Object.entries(mockPlaybackStates).forEach(([venueId, playback]) => {
+        dispatch({ type: 'SET_PLAYBACK', payload: { venueId, state: playback } });
+      });
     }
   }, [state.isAuthenticated, router, dispatch]);
 
