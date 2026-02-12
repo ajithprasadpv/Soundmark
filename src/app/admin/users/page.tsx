@@ -8,6 +8,8 @@ import {
   CheckCircle2, XCircle, AlertTriangle,
   LayoutGrid, List, MapPin, Calendar,
   Activity, UserCheck, UserX,
+  CreditCard, DollarSign, Phone, Monitor, Headphones,
+  Receipt, Banknote, FileText,
 } from 'lucide-react';
 import { mockAdminUsers, AdminUserProfile } from '@/lib/mock-data';
 import type { PlanType, UserRole, UserStatus, SubscriptionStatus } from '@/types';
@@ -146,9 +148,25 @@ function UserDetailPanel({
             </div>
           </div>
 
-          {/* Subscription */}
+          {/* Contact */}
+          {user.phone && (
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Contact</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{user.phone}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subscription & Billing */}
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Subscription</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Subscription & Billing</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Plan</p>
@@ -159,18 +177,57 @@ function UserDetailPanel({
                 <SubscriptionBadge status={user.subscriptionStatus} />
               </div>
             </div>
+            {user.billingAmount > 0 && (
+              <div className="flex items-center gap-3 pt-1">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">${user.billingAmount.toLocaleString()}<span className="text-xs text-muted-foreground font-normal">/{user.billingCycle === 'monthly' ? 'mo' : 'yr'}</span></p>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {user.paymentMethod === 'card' ? 'Credit Card' : user.paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 'Invoice'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {user.nextRenewal && (
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                  <Receipt className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Next Renewal</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(user.nextRenewal).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            )}
+            {user.trialEndsAt && (
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                <p className="text-xs font-medium text-amber-400">Trial ends {new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            )}
           </div>
 
           {/* Usage */}
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Usage</p>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
-                <MapPin className="w-4 h-4 text-violet-400" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-2.5 rounded-lg bg-background/50">
+                <MapPin className="w-4 h-4 text-violet-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-foreground">{user.venueCount}</p>
+                <p className="text-[10px] text-muted-foreground">Venues</p>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{user.venueCount} venue{user.venueCount !== 1 ? 's' : ''}</p>
-                <p className="text-xs text-muted-foreground">Active locations</p>
+              <div className="text-center p-2.5 rounded-lg bg-background/50">
+                <Monitor className="w-4 h-4 text-sky-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-foreground">{user.deviceCount}</p>
+                <p className="text-[10px] text-muted-foreground">Devices</p>
+              </div>
+              <div className="text-center p-2.5 rounded-lg bg-background/50">
+                <Headphones className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-foreground">{user.totalPlayHours.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">Play Hrs</p>
               </div>
             </div>
           </div>

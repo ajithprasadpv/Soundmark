@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Waves, Shield, LayoutDashboard, Users, LogOut, ChevronRight } from 'lucide-react';
+import { Waves, Shield, LayoutDashboard, Users, LogOut, ChevronRight, Receipt } from 'lucide-react';
 import { verifyToken } from '@/lib/auth';
 
 const adminNavItems = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/users', label: 'User Profiles', icon: Users, exact: false },
+  { href: '/admin/subscriptions', label: 'Subscriptions', icon: Receipt, exact: false },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

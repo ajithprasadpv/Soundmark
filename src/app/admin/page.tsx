@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   Users, Crown, TrendingUp, AlertTriangle,
   ArrowRight, Building2, CheckCircle2, XCircle, Clock,
+  DollarSign, Receipt,
 } from 'lucide-react';
 import { mockAdminUsers } from '@/lib/mock-data';
 
@@ -62,6 +63,11 @@ export default function AdminOverviewPage() {
 
   // Unique orgs
   const uniqueOrgs = new Set(mockAdminUsers.map(u => u.organizationId)).size;
+
+  // Revenue
+  const totalMRR = mockAdminUsers
+    .filter(u => u.role === 'owner' && u.subscriptionStatus !== 'cancelled')
+    .reduce((sum, u) => sum + (u.billingCycle === 'monthly' ? u.billingAmount : Math.round(u.billingAmount / 12)), 0);
 
   return (
     <div className="space-y-8">
@@ -201,7 +207,7 @@ export default function AdminOverviewPage() {
       {/* Quick Actions */}
       <div className="rounded-2xl border border-border/60 bg-card p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Quick Access</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Link
             href="/admin/users"
             className="flex items-center gap-3 p-4 rounded-xl border border-border/60 hover:border-violet-500/30 hover:bg-violet-500/[0.03] transition-all group"
@@ -214,6 +220,19 @@ export default function AdminOverviewPage() {
               <p className="text-xs text-muted-foreground">View, search, filter and manage all platform users</p>
             </div>
             <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-violet-400 transition-colors shrink-0" />
+          </Link>
+          <Link
+            href="/admin/subscriptions"
+            className="flex items-center gap-3 p-4 rounded-xl border border-border/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Manage Subscriptions</p>
+              <p className="text-xs text-muted-foreground">Billing, plans, revenue — ${totalMRR.toLocaleString()}/mo MRR</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-emerald-400 transition-colors shrink-0" />
           </Link>
           <Link
             href="/admin/users?filter=suspended"
