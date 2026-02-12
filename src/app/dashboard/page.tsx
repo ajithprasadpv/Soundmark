@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,14 +17,111 @@ import {
   Zap,
   Activity,
   Waves,
+  Thermometer,
+  Droplets,
+  Wind,
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  CloudDrizzle,
+  CloudFog,
+  CloudSun,
+  Smile,
+  Heart,
+  Coffee,
+  Flame,
+  Moon,
+  Sparkles,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAudio } from '@/hooks/useAudio';
+
+// ─── Weather types & helpers ─────────────────────────────────────
+interface WeatherData {
+  temperature: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
+  condition: string;
+  icon: string;
+  isDay: boolean;
+}
+
+const WEATHER_ICONS: Record<string, React.ElementType> = {
+  clear: Sun,
+  partly_cloudy: CloudSun,
+  cloudy: Cloud,
+  fog: CloudFog,
+  drizzle: CloudDrizzle,
+  rain: CloudRain,
+  heavy_rain: CloudRain,
+  snow: CloudSnow,
+  thunderstorm: CloudLightning,
+};
+
+const MOODS = [
+  { id: 'energetic', label: 'Energetic', icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', activeBg: 'bg-orange-500/20 border-orange-500/40' },
+  { id: 'happy', label: 'Happy', icon: Smile, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', activeBg: 'bg-amber-500/20 border-amber-500/40' },
+  { id: 'relaxed', label: 'Relaxed', icon: Coffee, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', activeBg: 'bg-emerald-500/20 border-emerald-500/40' },
+  { id: 'romantic', label: 'Romantic', icon: Heart, color: 'text-pink-400', bg: 'bg-pink-500/10 border-pink-500/20', activeBg: 'bg-pink-500/20 border-pink-500/40' },
+  { id: 'calm', label: 'Calm', icon: Moon, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20', activeBg: 'bg-indigo-500/20 border-indigo-500/40' },
+  { id: 'focused', label: 'Focused', icon: Sparkles, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20', activeBg: 'bg-violet-500/20 border-violet-500/40' },
+] as const;
 
 export default function DashboardPage() {
   const { state, dispatch } = useAppState();
   const { venues, playbackStates, analytics } = state;
   const audio = useAudio();
+
+  // ─── Weather & Mood state ──────────────────────────────────────
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [selectedMood, setSelectedMood] = useState<string>('relaxed');
+  const [locationName, setLocationName] = useState<string>('');
+
+  const fetchWeather = useCallback(async (lat: number, lon: number) => {
+    setWeatherLoading(true);
+    setWeatherError(null);
+    try {
+      const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      setWeather(json.data);
+    } catch (err) {
+      setWeatherError(err instanceof Error ? err.message : 'Failed to fetch weather');
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Use first venue's coordinates, or fallback to browser geolocation
+    const firstVenue = venues.find(v => v.latitude && v.longitude);
+    if (firstVenue?.latitude && firstVenue?.longitude) {
+      setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
+      fetchWeather(firstVenue.latitude, firstVenue.longitude);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocationName('Your Location');
+          fetchWeather(pos.coords.latitude, pos.coords.longitude);
+        },
+        () => {
+          // Default to San Francisco if geolocation denied
+          setLocationName('San Francisco, CA');
+          fetchWeather(37.7749, -122.4194);
+        }
+      );
+    } else {
+      setLocationName('San Francisco, CA');
+      fetchWeather(37.7749, -122.4194);
+    }
+  }, [venues, fetchWeather]);
 
   const activeVenues = venues.filter((v) => v.status === 'active');
   const playingVenues = Object.values(playbackStates).filter((p) => p.isPlaying);
@@ -251,6 +349,127 @@ export default function DashboardPage() {
                   <span className="text-xs font-medium text-muted-foreground/60">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Weather & Mood */}
+          <Card className="border-border/60 bg-card overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-foreground/90">
+                  <Thermometer className="w-5 h-5 text-violet-400" />
+                  Weather & Mood
+                </CardTitle>
+                {!weatherLoading && weather && (
+                  <button
+                    onClick={() => {
+                      const v = venues.find(v => v.latitude && v.longitude);
+                      if (v?.latitude && v?.longitude) fetchWeather(v.latitude, v.longitude);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-foreground/[0.06] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    title="Refresh weather"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {locationName && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3" /> {locationName}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Weather Display */}
+              {weatherLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                  <span className="text-sm text-muted-foreground ml-2">Fetching weather...</span>
+                </div>
+              ) : weatherError ? (
+                <div className="text-center py-4">
+                  <p className="text-xs text-muted-foreground">{weatherError}</p>
+                </div>
+              ) : weather ? (
+                <>
+                  {/* Main weather */}
+                  <div className="flex items-center gap-4 p-3.5 rounded-xl bg-gradient-to-r from-sky-500/[0.08] to-blue-500/[0.04] border border-sky-500/10">
+                    <div className="w-14 h-14 rounded-xl bg-sky-500/10 flex items-center justify-center shrink-0">
+                      {(() => {
+                        const WeatherIcon = WEATHER_ICONS[weather.icon] || Cloud;
+                        return <WeatherIcon className="w-7 h-7 text-sky-400" />;
+                      })()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-foreground">{weather.temperature}°</span>
+                        <span className="text-sm text-muted-foreground">C</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{weather.condition}</p>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
+                        <Thermometer className="w-3 h-3" /> Feels {weather.feelsLike}°
+                      </p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
+                        <Droplets className="w-3 h-3" /> {weather.humidity}%
+                      </p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
+                        <Wind className="w-3 h-3" /> {weather.windSpeed} km/h
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {/* Mood Selector */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">Select Mood</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {MOODS.map((mood) => {
+                    const isActive = selectedMood === mood.id;
+                    return (
+                      <button
+                        key={mood.id}
+                        onClick={() => setSelectedMood(mood.id)}
+                        className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                          isActive ? mood.activeBg : `${mood.bg} hover:opacity-80`
+                        }`}
+                      >
+                        <mood.icon className={`w-4 h-4 ${mood.color}`} />
+                        <span className={`text-[11px] font-medium ${isActive ? mood.color : 'text-muted-foreground'}`}>
+                          {mood.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* AI Recommendation */}
+              {weather && (
+                <div className="p-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/10">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                    <span className="text-xs font-medium text-violet-400">AI Suggestion</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {weather.temperature > 30
+                      ? `Hot day at ${weather.temperature}°C — `
+                      : weather.temperature > 20
+                      ? `Pleasant ${weather.temperature}°C — `
+                      : weather.temperature > 10
+                      ? `Cool ${weather.temperature}°C — `
+                      : `Cold ${weather.temperature}°C — `}
+                    {selectedMood === 'energetic' && 'upbeat electronic and pop tracks recommended to match the energy.'}
+                    {selectedMood === 'happy' && 'bright indie and feel-good acoustic tracks will complement the vibe.'}
+                    {selectedMood === 'relaxed' && 'smooth jazz and lo-fi beats are perfect for a laid-back atmosphere.'}
+                    {selectedMood === 'romantic' && 'soft piano and R&B ballads will set the perfect romantic tone.'}
+                    {selectedMood === 'calm' && 'ambient soundscapes and nature sounds for a peaceful environment.'}
+                    {selectedMood === 'focused' && 'minimal instrumental and deep focus playlists for concentration.'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
