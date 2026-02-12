@@ -95,9 +95,10 @@ function getTempBucket(temp: number): 'hot' | 'pleasant' | 'cool' | 'cold' {
 
 interface AutoPlaylistTrack {
   key: string;
-  filename: string;
+  title: string;
+  artist: string;
   genre: string;
-  language: string;
+  source: 'S3 Library' | 'Catalog' | 'Jamendo' | 'ccMixter';
   streamUrl: string;
 }
 
@@ -207,13 +208,67 @@ export default function DashboardPage() {
       const bucket = getTempBucket(weather.temperature);
       const genres = MOOD_GENRE_MAP[selectedMood]?.[bucket] || ['jazz', 'ambient', 'chill'];
       const allTracks: AutoPlaylistTrack[] = [];
+
+      // 1. Fetch from S3 Library
       for (const genre of genres) {
         try {
           const res = await fetch(`/api/music/library?language=en&genre=${encodeURIComponent(genre)}&limit=20`);
           const json = await res.json();
-          if (json.data?.tracks) allTracks.push(...json.data.tracks);
+          if (json.data?.tracks) {
+            json.data.tracks.forEach((t: { key: string; filename: string; genre: string; streamUrl: string }) => {
+              allTracks.push({
+                key: t.key,
+                title: t.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
+                artist: 'Unknown',
+                genre: t.genre || genre,
+                source: 'S3 Library',
+                streamUrl: t.streamUrl,
+              });
+            });
+          }
         } catch { /* skip failed genre */ }
       }
+
+      // 2. Pull from local music catalog (musicLibrary from state)
+      const { musicLibrary } = state;
+      if (musicLibrary?.length) {
+        const catalogMatches = musicLibrary.filter(
+          t => t.status === 'active' && genres.some(g => t.genre.toLowerCase().includes(g.toLowerCase()))
+        );
+        catalogMatches.forEach(t => {
+          allTracks.push({
+            key: `catalog-${t.id}`,
+            title: t.title,
+            artist: t.artist,
+            genre: t.genre,
+            source: 'Catalog',
+            streamUrl: t.fileUrl,
+          });
+        });
+      }
+
+      // 3. Pull from active music sources (Jamendo, ccMixter) — match by genre
+      const { musicSources } = state;
+      if (musicSources?.length) {
+        const activeSources = musicSources.filter(s => s.status === 'active' && s.provider !== 'Internal');
+        activeSources.forEach(src => {
+          const matchingGenres = genres.filter(g => src.supportedGenres.some(sg => sg.toLowerCase().includes(g.toLowerCase())));
+          if (matchingGenres.length > 0) {
+            // Add representative tracks from this source
+            matchingGenres.slice(0, 2).forEach(g => {
+              allTracks.push({
+                key: `${src.id}-${g}-${Math.random().toString(36).slice(2, 6)}`,
+                title: `${g.charAt(0).toUpperCase() + g.slice(1)} Mix`,
+                artist: src.name,
+                genre: g,
+                source: src.provider as AutoPlaylistTrack['source'],
+                streamUrl: `${src.apiEndpoint}?genre=${encodeURIComponent(g)}`,
+              });
+            });
+          }
+        });
+      }
+
       // Deduplicate by key, shuffle, take 10
       const unique = Array.from(new Map(allTracks.map((t: AutoPlaylistTrack) => [t.key, t])).values());
       const shuffled = unique.sort(() => Math.random() - 0.5).slice(0, 10);
@@ -223,7 +278,7 @@ export default function DashboardPage() {
     } finally {
       setPlaylistLoading(false);
     }
-  }, [weather, selectedMood]);
+  }, [weather, selectedMood, state]);
 
   const playPlaylistTrack = useCallback((track: AutoPlaylistTrack) => {
     if (playlistAudio) {
@@ -241,10 +296,9 @@ export default function DashboardPage() {
       const dur = Math.round(el.duration || 0);
       if (dur > 2) {
         logPlay({
-          trackTitle: track.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
-          artist: 'Unknown',
+          trackTitle: track.title,
+          artist: track.artist,
           genre: track.genre || 'Unknown',
-          language: track.language,
           source: 's3',
           durationSec: dur,
         });
@@ -658,7 +712,7 @@ export default function DashboardPage() {
                   <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
                     {autoPlaylist.map((track, idx) => {
                       const isPlaying = playlistPlaying === track.key;
-                      const name = track.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+                      const name = track.title;
                       return (
                         <button
                           key={track.key}
@@ -680,9 +734,9 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-xs font-medium truncate ${isPlaying ? 'text-violet-400' : 'text-foreground/80'}`}>{name}</p>
-                            <p className="text-[10px] text-muted-foreground/60">{track.genre}</p>
+                            <p className="text-[10px] text-muted-foreground/60">{track.artist !== 'Unknown' ? `${track.artist} • ` : ''}{track.genre}</p>
                           </div>
-                          <span className="text-[10px] text-muted-foreground/40 font-mono shrink-0">#{idx + 1}</span>
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 opacity-60">{track.source}</Badge>
                         </button>
                       );
                     })}
