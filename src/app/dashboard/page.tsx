@@ -212,64 +212,47 @@ export default function DashboardPage() {
       const genres = MOOD_GENRE_MAP[selectedMood]?.[bucket] || ['jazz', 'ambient', 'chill'];
       const allTracks: AutoPlaylistTrack[] = [];
 
-      // 1. Fetch from S3 Library
+      // Fetch from S3 Library across multiple languages for variety
+      const languages = ['en', 'hi', 'es', 'in-instrumental'];
       for (const genre of genres) {
+        for (const lang of languages) {
+          try {
+            const res = await fetch(`/api/music/library?language=${lang}&genre=${encodeURIComponent(genre)}&limit=15`);
+            const json = await res.json();
+            if (json.data?.tracks) {
+              json.data.tracks.forEach((t: { key: string; filename: string; genre: string; streamUrl: string; languageName?: string }) => {
+                allTracks.push({
+                  key: t.key,
+                  title: t.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
+                  artist: t.languageName || lang,
+                  genre: t.genre || genre,
+                  source: 'S3 Library',
+                  streamUrl: t.streamUrl,
+                });
+              });
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      // Also fetch all S3 tracks if we got fewer than 10 from genre-specific queries
+      if (allTracks.length < 10) {
         try {
-          const res = await fetch(`/api/music/library?language=en&genre=${encodeURIComponent(genre)}&limit=20`);
+          const res = await fetch('/api/music/library?limit=50');
           const json = await res.json();
           if (json.data?.tracks) {
-            json.data.tracks.forEach((t: { key: string; filename: string; genre: string; streamUrl: string }) => {
+            json.data.tracks.forEach((t: { key: string; filename: string; genre: string; streamUrl: string; languageName?: string }) => {
               allTracks.push({
                 key: t.key,
                 title: t.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
-                artist: 'Unknown',
-                genre: t.genre || genre,
+                artist: t.languageName || 'S3',
+                genre: t.genre || 'Unknown',
                 source: 'S3 Library',
                 streamUrl: t.streamUrl,
               });
             });
           }
-        } catch { /* skip failed genre */ }
-      }
-
-      // 2. Pull from local music catalog (musicLibrary from state)
-      const { musicLibrary } = state;
-      if (musicLibrary?.length) {
-        const catalogMatches = musicLibrary.filter(
-          t => t.status === 'active' && genres.some(g => t.genre.toLowerCase().includes(g.toLowerCase()))
-        );
-        catalogMatches.forEach(t => {
-          allTracks.push({
-            key: `catalog-${t.id}`,
-            title: t.title,
-            artist: t.artist,
-            genre: t.genre,
-            source: 'Catalog',
-            streamUrl: t.fileUrl,
-          });
-        });
-      }
-
-      // 3. Pull from active music sources (Jamendo, ccMixter) — match by genre
-      const { musicSources } = state;
-      if (musicSources?.length) {
-        const activeSources = musicSources.filter(s => s.status === 'active' && s.provider !== 'Internal');
-        activeSources.forEach(src => {
-          const matchingGenres = genres.filter(g => src.supportedGenres.some(sg => sg.toLowerCase().includes(g.toLowerCase())));
-          if (matchingGenres.length > 0) {
-            // Add representative tracks from this source
-            matchingGenres.slice(0, 2).forEach(g => {
-              allTracks.push({
-                key: `${src.id}-${g}-${Math.random().toString(36).slice(2, 6)}`,
-                title: `${g.charAt(0).toUpperCase() + g.slice(1)} Mix`,
-                artist: src.name,
-                genre: g,
-                source: src.provider as AutoPlaylistTrack['source'],
-                streamUrl: `${src.apiEndpoint}?genre=${encodeURIComponent(g)}`,
-              });
-            });
-          }
-        });
+        } catch { /* skip */ }
       }
 
       // Deduplicate by key, shuffle, take 10
@@ -281,7 +264,7 @@ export default function DashboardPage() {
     } finally {
       setPlaylistLoading(false);
     }
-  }, [weather, selectedMood, state]);
+  }, [weather, selectedMood]);
 
   const playPlaylistTrack = useCallback((track: AutoPlaylistTrack) => {
     if (playlistAudio) {
@@ -303,18 +286,7 @@ export default function DashboardPage() {
       setPlaylistCurrentTime(el.currentTime);
       setPlaylistProgress(el.duration ? (el.currentTime / el.duration) * 100 : 0);
     };
-    el.onended = () => {
-      const dur = Math.round(el.duration || 0);
-      if (dur > 2) {
-        logPlay({
-          trackTitle: track.title,
-          artist: track.artist,
-          genre: track.genre || 'Unknown',
-          source: 's3',
-          durationSec: dur,
-        });
-      }
-      // Auto-play next track in playlist
+    const skipToNext = () => {
       const idx = autoPlaylist.findIndex(t => t.key === track.key);
       if (idx >= 0 && idx < autoPlaylist.length - 1) {
         playPlaylistTrack(autoPlaylist[idx + 1]);
@@ -326,7 +298,21 @@ export default function DashboardPage() {
         setPlaylistDuration(0);
       }
     };
-    el.play();
+    el.onended = () => {
+      const dur = Math.round(el.duration || 0);
+      if (dur > 2) {
+        logPlay({
+          trackTitle: track.title,
+          artist: track.artist,
+          genre: track.genre || 'Unknown',
+          source: 's3',
+          durationSec: dur,
+        });
+      }
+      skipToNext();
+    };
+    el.onerror = () => skipToNext();
+    el.play().catch(() => skipToNext());
     setPlaylistPlaying(track.key);
     setPlaylistAudio(el);
   // eslint-disable-next-line react-hooks/exhaustive-deps
