@@ -36,10 +36,13 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  ListMusic,
+  Disc3,
+  SkipForward,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAudio } from '@/hooks/useAudio';
-import { getAnalytics, ComputedAnalytics } from '@/lib/analytics-tracker';
+import { getAnalytics, ComputedAnalytics, logPlay } from '@/lib/analytics-tracker';
 
 // ─── Weather types & helpers ─────────────────────────────────────
 interface WeatherData {
@@ -73,11 +76,42 @@ const MOODS = [
   { id: 'focused', label: 'Focused', icon: Sparkles, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20', activeBg: 'bg-violet-500/20 border-violet-500/40' },
 ] as const;
 
+// Map mood + weather to preferred S3 genres
+const MOOD_GENRE_MAP: Record<string, { hot: string[]; pleasant: string[]; cool: string[]; cold: string[] }> = {
+  energetic: { hot: ['electronic', 'pop', 'deep-house'], pleasant: ['indie', 'pop', 'rock'], cool: ['electronic', 'rock', 'pop'], cold: ['electronic', 'deep-house', 'pop'] },
+  happy: { hot: ['pop', 'indie', 'soul'], pleasant: ['indie', 'acoustic', 'folk'], cool: ['acoustic', 'indie', 'pop'], cold: ['soul', 'indie', 'acoustic'] },
+  relaxed: { hot: ['chill', 'lounge', 'jazz'], pleasant: ['jazz', 'lounge', 'chill'], cool: ['jazz', 'lounge', 'ambient'], cold: ['lounge', 'jazz', 'chill'] },
+  romantic: { hot: ['soul', 'r&b', 'jazz'], pleasant: ['acoustic', 'jazz', 'soul'], cool: ['classical', 'jazz', 'acoustic'], cold: ['classical', 'jazz', 'soul'] },
+  calm: { hot: ['ambient', 'chill', 'lounge'], pleasant: ['ambient', 'acoustic', 'classical'], cool: ['ambient', 'classical', 'chill'], cold: ['ambient', 'classical', 'chill'] },
+  focused: { hot: ['ambient', 'electronic', 'classical'], pleasant: ['classical', 'ambient', 'chill'], cool: ['classical', 'ambient', 'electronic'], cold: ['classical', 'ambient', 'electronic'] },
+};
+
+function getTempBucket(temp: number): 'hot' | 'pleasant' | 'cool' | 'cold' {
+  if (temp > 30) return 'hot';
+  if (temp > 20) return 'pleasant';
+  if (temp > 10) return 'cool';
+  return 'cold';
+}
+
+interface AutoPlaylistTrack {
+  key: string;
+  filename: string;
+  genre: string;
+  language: string;
+  streamUrl: string;
+}
+
 export default function DashboardPage() {
   const { state, dispatch } = useAppState();
   const { venues, playbackStates } = state;
   const audio = useAudio();
   const [realAnalytics, setRealAnalytics] = useState<ComputedAnalytics | null>(null);
+
+  // Auto-playlist state
+  const [autoPlaylist, setAutoPlaylist] = useState<AutoPlaylistTrack[]>([]);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+  const [playlistPlaying, setPlaylistPlaying] = useState<string | null>(null);
+  const [playlistAudio, setPlaylistAudio] = useState<HTMLAudioElement | null>(null);
 
   // Load real analytics from localStorage on mount & refresh every 30s
   useEffect(() => {
@@ -165,6 +199,70 @@ export default function DashboardPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchWeather, reverseGeocode]);
+
+  const fetchAutoPlaylist = useCallback(async () => {
+    if (!weather) return;
+    setPlaylistLoading(true);
+    try {
+      const bucket = getTempBucket(weather.temperature);
+      const genres = MOOD_GENRE_MAP[selectedMood]?.[bucket] || ['jazz', 'ambient', 'chill'];
+      const allTracks: AutoPlaylistTrack[] = [];
+      for (const genre of genres) {
+        try {
+          const res = await fetch(`/api/music/library?language=en&genre=${encodeURIComponent(genre)}&limit=20`);
+          const json = await res.json();
+          if (json.data?.tracks) allTracks.push(...json.data.tracks);
+        } catch { /* skip failed genre */ }
+      }
+      // Deduplicate by key, shuffle, take 10
+      const unique = Array.from(new Map(allTracks.map((t: AutoPlaylistTrack) => [t.key, t])).values());
+      const shuffled = unique.sort(() => Math.random() - 0.5).slice(0, 10);
+      setAutoPlaylist(shuffled);
+    } catch {
+      setAutoPlaylist([]);
+    } finally {
+      setPlaylistLoading(false);
+    }
+  }, [weather, selectedMood]);
+
+  const playPlaylistTrack = useCallback((track: AutoPlaylistTrack) => {
+    if (playlistAudio) {
+      playlistAudio.pause();
+      playlistAudio.src = '';
+    }
+    if (playlistPlaying === track.key) {
+      setPlaylistPlaying(null);
+      setPlaylistAudio(null);
+      return;
+    }
+    const el = new Audio(track.streamUrl);
+    el.volume = 0.8;
+    el.onended = () => {
+      const dur = Math.round(el.duration || 0);
+      if (dur > 2) {
+        logPlay({
+          trackTitle: track.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
+          artist: 'Unknown',
+          genre: track.genre || 'Unknown',
+          language: track.language,
+          source: 's3',
+          durationSec: dur,
+        });
+      }
+      // Auto-play next track in playlist
+      const idx = autoPlaylist.findIndex(t => t.key === track.key);
+      if (idx >= 0 && idx < autoPlaylist.length - 1) {
+        playPlaylistTrack(autoPlaylist[idx + 1]);
+      } else {
+        setPlaylistPlaying(null);
+        setPlaylistAudio(null);
+      }
+    };
+    el.play();
+    setPlaylistPlaying(track.key);
+    setPlaylistAudio(el);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playlistAudio, playlistPlaying, autoPlaylist]);
 
   const activeVenues = venues.filter((v) => v.status === 'active');
   const playingVenues = Object.values(playbackStates).filter((p) => p.isPlaying);
@@ -535,6 +633,60 @@ export default function DashboardPage() {
                     {selectedMood === 'calm' && 'ambient soundscapes and nature sounds for a peaceful environment.'}
                     {selectedMood === 'focused' && 'minimal instrumental and deep focus playlists for concentration.'}
                   </p>
+                </div>
+              )}
+
+              {/* Auto Select Playlist Button */}
+              {weather && (
+                <button
+                  onClick={fetchAutoPlaylist}
+                  disabled={playlistLoading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-medium hover:from-violet-400 hover:to-purple-500 transition-all shadow-md shadow-violet-500/25 disabled:opacity-60 cursor-pointer"
+                >
+                  {playlistLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Picking tracks...</>
+                  ) : (
+                    <><ListMusic className="w-4 h-4" /> Auto Select Playlist for Me</>
+                  )}
+                </button>
+              )}
+
+              {/* Auto Playlist */}
+              {autoPlaylist.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Your Playlist ({autoPlaylist.length} tracks)</p>
+                  <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
+                    {autoPlaylist.map((track, idx) => {
+                      const isPlaying = playlistPlaying === track.key;
+                      const name = track.filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+                      return (
+                        <button
+                          key={track.key}
+                          onClick={() => playPlaylistTrack(track)}
+                          className={`w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left cursor-pointer ${
+                            isPlaying
+                              ? 'bg-violet-500/[0.12] border border-violet-500/20'
+                              : 'hover:bg-foreground/[0.04] border border-transparent'
+                          }`}
+                        >
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                            isPlaying ? 'bg-violet-500 shadow-sm shadow-violet-500/30' : 'bg-foreground/[0.06]'
+                          }`}>
+                            {isPlaying ? (
+                              <Pause className="w-3 h-3 text-white" />
+                            ) : (
+                              <Play className="w-3 h-3 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium truncate ${isPlaying ? 'text-violet-400' : 'text-foreground/80'}`}>{name}</p>
+                            <p className="text-[10px] text-muted-foreground/60">{track.genre}</p>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground/40 font-mono shrink-0">#{idx + 1}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </CardContent>
