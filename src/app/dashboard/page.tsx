@@ -100,28 +100,45 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Use first venue's coordinates, or fallback to browser geolocation
-    const firstVenue = venues.find(v => v.latitude && v.longitude);
-    if (firstVenue?.latitude && firstVenue?.longitude) {
-      setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
-      fetchWeather(firstVenue.latitude, firstVenue.longitude);
-    } else if (navigator.geolocation) {
+    // Prioritize browser geolocation for accurate local weather
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setLocationName('Your Location');
+          // Reverse geocode city name from coordinates
+          fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m&timezone=auto`)
+            .then(r => r.json())
+            .then(d => {
+              setLocationName(d.timezone?.replace(/_/g, ' ').split('/').pop() || 'Your Location');
+            })
+            .catch(() => setLocationName('Your Location'));
           fetchWeather(pos.coords.latitude, pos.coords.longitude);
         },
         () => {
-          // Default to San Francisco if geolocation denied
-          setLocationName('San Francisco, CA');
-          fetchWeather(37.7749, -122.4194);
-        }
+          // Geolocation denied — fall back to first venue
+          const firstVenue = venues.find(v => v.latitude && v.longitude);
+          if (firstVenue?.latitude && firstVenue?.longitude) {
+            setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
+            fetchWeather(firstVenue.latitude, firstVenue.longitude);
+          } else {
+            setLocationName('Bangalore, KA');
+            fetchWeather(12.9716, 77.5946);
+          }
+        },
+        { timeout: 5000 }
       );
     } else {
-      setLocationName('San Francisco, CA');
-      fetchWeather(37.7749, -122.4194);
+      // No geolocation API — fall back to first venue
+      const firstVenue = venues.find(v => v.latitude && v.longitude);
+      if (firstVenue?.latitude && firstVenue?.longitude) {
+        setLocationName(`${firstVenue.city}, ${firstVenue.state}`);
+        fetchWeather(firstVenue.latitude, firstVenue.longitude);
+      } else {
+        setLocationName('Bangalore, KA');
+        fetchWeather(12.9716, 77.5946);
+      }
     }
-  }, [venues, fetchWeather]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchWeather]);
 
   const activeVenues = venues.filter((v) => v.status === 'active');
   const playingVenues = Object.values(playbackStates).filter((p) => p.isPlaying);
@@ -363,8 +380,16 @@ export default function DashboardPage() {
                 {!weatherLoading && weather && (
                   <button
                     onClick={() => {
-                      const v = venues.find(v => v.latitude && v.longitude);
-                      if (v?.latitude && v?.longitude) fetchWeather(v.latitude, v.longitude);
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+                          () => {
+                            const v = venues.find(v => v.latitude && v.longitude);
+                            if (v?.latitude && v?.longitude) fetchWeather(v.latitude, v.longitude);
+                          },
+                          { timeout: 5000 }
+                        );
+                      }
                     }}
                     className="p-1.5 rounded-lg hover:bg-foreground/[0.06] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     title="Refresh weather"
