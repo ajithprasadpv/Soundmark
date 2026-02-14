@@ -1,48 +1,95 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { User, UserRole } from '@/types';
+import NextAuth, { NextAuthConfig } from 'next-auth';
+import Google from 'next-auth/providers/google';
+import Credentials from 'next-auth/providers/credentials';
+import { verifyPassword } from './auth-legacy';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'soundmark-secret-key-change-in-production';
-const JWT_EXPIRY = '15m';
-const REFRESH_EXPIRY = '30d';
+export const authConfig: NextAuthConfig = {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    Credentials({
+      name: 'Email and Password',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
+        // For demo purposes, check against hardcoded admin user
+        // In Phase 3, this will query the database
+        const DEMO_USERS = [
+          { 
+            id: '1', 
+            email: 'admin@soundmark.app', 
+            name: 'Ajith Prasad', 
+            role: 'owner',
+            passwordHash: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYILSWowO4u' // Admin@123
+          },
+          { 
+            id: 'sa-1', 
+            email: 'superadmin@soundmark.app', 
+            name: 'Super Admin', 
+            role: 'super_admin',
+            passwordHash: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYILSWowO4u' // Admin@123
+          },
+        ];
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
+        const user = DEMO_USERS.find(u => u.email === credentials.email);
+        if (!user) {
+          return null;
+        }
 
-export function generateAccessToken(user: { id: string; email: string; role: UserRole; organizationId?: string }): string {
-  return jwt.sign(
-    { userId: user.id, email: user.email, role: user.role, organizationId: user.organizationId || '1' },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRY }
-  );
-}
+        const isValid = await verifyPassword(credentials.password as string, user.passwordHash);
+        if (!isValid) {
+          return null;
+        }
 
-export function generateRefreshToken(user: { id: string }): string {
-  return jwt.sign(
-    { userId: user.id, type: 'refresh' },
-    JWT_SECRET,
-    { expiresIn: REFRESH_EXPIRY }
-  );
-}
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        };
+      },
+    }),
+  ],
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+  },
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role || 'owner';
+        token.provider = account?.provider;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).provider = token.provider;
+      }
+      return session;
+    },
+    async signIn({ user, account }) {
+      // For Google OAuth, we'll create user in database in Phase 3
+      // For now, just allow sign in
+      return true;
+    },
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
 
-export function verifyToken(token: string): { userId: string; email: string; role: UserRole; organizationId: string } | null {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: UserRole; organizationId: string };
-    return decoded;
-  } catch {
-    return null;
-  }
-}
-
-export function validatePassword(password: string): { valid: boolean; message: string } {
-  if (password.length < 8) return { valid: false, message: 'Password must be at least 8 characters' };
-  if (!/[A-Z]/.test(password)) return { valid: false, message: 'Password must contain at least 1 uppercase letter' };
-  if (!/[0-9]/.test(password)) return { valid: false, message: 'Password must contain at least 1 number' };
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return { valid: false, message: 'Password must contain at least 1 special character' };
-  return { valid: true, message: 'Password is valid' };
-}
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
