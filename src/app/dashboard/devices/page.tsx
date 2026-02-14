@@ -83,6 +83,16 @@ export default function DevicesPage() {
     return () => clearInterval(interval);
   }, [fetchDevices]);
 
+  // Sync music source selector with device's actual playing source
+  useEffect(() => {
+    devices.forEach(d => {
+      if (d.status?.source && !deviceMusicSource[d.id]) {
+        const src = d.status.source === 'S3 Library' ? 's3' : 'jamendo';
+        setDeviceMusicSource(prev => ({ ...prev, [d.id]: src }));
+      }
+    });
+  }, [devices, deviceMusicSource]);
+
   const createDevice = async () => {
     if (!newName.trim()) return;
     setLoading(true);
@@ -371,7 +381,7 @@ export default function DevicesPage() {
                         <Button
                           size="icon"
                           className="w-11 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-foreground/10"
-                          onClick={() => sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient', musicSource: deviceMusicSource[selected.id] || 'jamendo' })}
+                          onClick={() => sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient', musicSource: deviceMusicSource[selected.id] || (selected.status?.source === 'S3 Library' ? 's3' : 'jamendo') })}
                         >
                           <Play className="w-5 h-5 ml-0.5" />
                         </Button>
@@ -386,7 +396,11 @@ export default function DevicesPage() {
                       <p className="text-[10px] text-muted-foreground/50 mb-1.5 font-medium">Music Source</p>
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 'jamendo' }))}
+                          onClick={() => {
+                            setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 'jamendo' }));
+                            // Immediately send play command with new source
+                            sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient', musicSource: 'jamendo' });
+                          }}
                           className={`flex-1 px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                             (deviceMusicSource[selected.id] || 'jamendo') === 'jamendo'
                               ? 'bg-violet-500/10 border-violet-500/40 text-violet-400'
@@ -397,7 +411,11 @@ export default function DevicesPage() {
                           Copyright-Free
                         </button>
                         <button
-                          onClick={() => setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 's3' }))}
+                          onClick={() => {
+                            setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 's3' }));
+                            // Immediately send play command with new source
+                            sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient', musicSource: 's3' });
+                          }}
                           className={`flex-1 px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                             deviceMusicSource[selected.id] === 's3'
                               ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
