@@ -65,7 +65,7 @@ export default function VenuesPage() {
     setNewVenue({ name: '', venueType: 'restaurant', address: '', city: '', state: '', country: 'US', genres: [], tempoMin: 70, tempoMax: 120, energyMin: 0.3, energyMax: 0.7, volumeLevel: 50, musicSource: 'jamendo' });
   };
 
-  const togglePlayback = (venueId: string) => {
+  const togglePlayback = async (venueId: string) => {
     const current = playbackStates[venueId];
     if (current) {
       const willPlay = !current.isPlaying;
@@ -86,9 +86,54 @@ export default function VenuesPage() {
       if (willPlay && venue) {
         const genre = venue.configuration?.preferredGenres[0] || 'ambient';
         const musicSource = venue.configuration?.musicSource || 'jamendo';
+        
+        // Start web player
         audio.startPlayback(venueId, genre, current.volume, musicSource);
+        
+        // Send play command to all devices assigned to this venue
+        try {
+          const devicesRes = await fetch('/api/devices');
+          const devicesData = await devicesRes.json();
+          const assignedDevices = devicesData.devices?.filter((d: any) => d.venueId === venueId) || [];
+          
+          // Send play command to each assigned device
+          for (const device of assignedDevices) {
+            await fetch('/api/devices', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                deviceId: device.id,
+                action: 'send_command',
+                command: { action: 'play', payload: { genre, musicSource } }
+              }),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to send play command to devices:', error);
+        }
       } else {
         audio.stopPlayback(venueId);
+        
+        // Send pause command to all devices assigned to this venue
+        try {
+          const devicesRes = await fetch('/api/devices');
+          const devicesData = await devicesRes.json();
+          const assignedDevices = devicesData.devices?.filter((d: any) => d.venueId === venueId) || [];
+          
+          for (const device of assignedDevices) {
+            await fetch('/api/devices', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                deviceId: device.id,
+                action: 'send_command',
+                command: { action: 'pause' }
+              }),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to send pause command to devices:', error);
+        }
       }
     }
   };
