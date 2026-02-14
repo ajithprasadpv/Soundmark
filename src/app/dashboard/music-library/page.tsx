@@ -149,7 +149,7 @@ export default function MusicLibraryPage() {
       return;
     }
     stopS3Playback();
-    const proxyUrl = `/api/music/stream/${encodeURIComponent(track.key)}`;
+    const proxyUrl = `/api/music/stream/${track.key.split('/').map(s => encodeURIComponent(s)).join('/')}`;
     const el = new Audio(proxyUrl);
     el.volume = s3Volume;
     el.muted = s3Muted;

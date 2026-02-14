@@ -2,21 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStreamUrl } from '@/lib/s3';
 
 /**
- * GET /api/music/stream/[key]
+ * GET /api/music/stream/[...key]
  * 
  * Proxies audio from S3 through our server to avoid CORS issues.
- * The [key] is the full S3 key encoded as a URL path segment.
- * Example: /api/music/stream/en%2Fjazz%2Fvelvet-dusk.mp3
+ * Uses catch-all route so slashes in S3 keys work correctly.
+ * Example: /api/music/stream/en/electronic/Alan%20Walker%20-%20Faded.mp3
  * 
  * Supports range requests for seeking.
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ key: string }> },
+  { params }: { params: Promise<{ key: string[] }> },
 ) {
   try {
     const { key } = await params;
-    const decodedKey = decodeURIComponent(key);
+    // Catch-all gives us an array of path segments — join to reconstruct S3 key
+    const decodedKey = key.map(segment => decodeURIComponent(segment)).join('/');
 
     if (!decodedKey) {
       return NextResponse.json(

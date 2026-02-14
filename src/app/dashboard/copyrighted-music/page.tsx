@@ -141,7 +141,7 @@ export default function CopyrightedMusicPage() {
     setCurrentIndex(index);
 
     const track = list[index];
-    const proxyUrl = `/api/music/stream/${encodeURIComponent(track.key)}`;
+    const proxyUrl = `/api/music/stream/${track.key.split('/').map(s => encodeURIComponent(s)).join('/')}`;
     const el = new Audio(proxyUrl);
     el.volume = volume;
     el.muted = muted;

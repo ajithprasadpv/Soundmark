@@ -191,7 +191,7 @@ export async function fetchS3Tracks(
       artist_name: t.language ? t.language.charAt(0).toUpperCase() + t.language.slice(1) : 'Unknown',
       album_name: t.genre || 'S3 Library',
       album_image: '',
-      audio: `/api/music/stream/${encodeURIComponent(t.key)}`,
+      audio: `/api/music/stream/${t.key.split('/').map(s => encodeURIComponent(s)).join('/')}`,
       image: '',
       shareurl: '',
       source: 'S3 Library',
