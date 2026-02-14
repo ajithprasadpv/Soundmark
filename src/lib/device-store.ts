@@ -161,6 +161,32 @@ function generateCommandId(): string {
 
 // ─── Public API ─────────────────────────────────────────────────
 
+// Re-register a device with a known ID (e.g. after cold start wiped /tmp)
+export function reRegisterDevice(existingId: string, name: string, organizationId: string): DeviceRecord {
+  const store = getStore();
+  const pairingCode = generatePairingCode();
+
+  const device: DeviceRecord = {
+    id: existingId,
+    name,
+    pairingCode,
+    venueId: null,
+    organizationId,
+    paired: true,
+    online: true,
+    lastHeartbeat: Date.now(),
+    registeredAt: new Date().toISOString(),
+    pendingCommand: null,
+    status: null,
+  };
+
+  store.devices[existingId] = device;
+  store.pairingCodes[pairingCode] = existingId;
+  persist();
+
+  return device;
+}
+
 export function registerDevice(name: string, organizationId: string): DeviceRecord {
   const store = getStore();
   const id = generateId();

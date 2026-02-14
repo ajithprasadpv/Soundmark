@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   registerDevice,
+  reRegisterDevice,
   pairDeviceByCode,
   pollCommand,
   acknowledgeCommand,
@@ -51,6 +52,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
     }
 
+    // Auto-re-register if device was lost (e.g. Vercel cold start wiped /tmp)
+    let device = getDevice(deviceId);
+    if (!device) {
+      device = reRegisterDevice(deviceId, 'Android TV Box', '1');
+    }
+
     // Update heartbeat
     heartbeat(deviceId);
 
@@ -73,8 +80,8 @@ export async function POST(req: NextRequest) {
     // Check for pending command
     const command = pollCommand(deviceId);
 
-    // Get device info for venue assignment changes
-    const device = getDevice(deviceId);
+    // Refresh device info after updates
+    device = getDevice(deviceId);
 
     return NextResponse.json({
       command: command || null,
