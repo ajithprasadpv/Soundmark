@@ -309,13 +309,13 @@ export function removeDevice(deviceId: string): boolean {
   return true;
 }
 
-// Mark devices offline if no heartbeat in 60 seconds
+// Mark devices offline if no heartbeat in 5 minutes
 export function cleanupStaleDevices() {
   const store = getStore();
   const now = Date.now();
   let changed = false;
   Object.values(store.devices).forEach(device => {
-    if (device.online && device.lastHeartbeat > 0 && now - device.lastHeartbeat > 60_000) {
+    if (device.online && device.lastHeartbeat > 0 && now - device.lastHeartbeat > 300_000) {
       device.online = false;
       changed = true;
     }
