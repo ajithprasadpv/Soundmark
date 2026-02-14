@@ -463,10 +463,23 @@ export default function DevicesPage() {
                     </div>
                     <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground/40 font-mono">
                       <span>{formatTime(selected.status.currentTime)}</span>
-                      <div className="flex-1 h-1 bg-foreground/[0.06] rounded-full overflow-hidden">
+                      <div
+                        className="flex-1 h-2 bg-foreground/[0.06] rounded-full overflow-hidden cursor-pointer group relative"
+                        onClick={(e) => {
+                          if (!selected.status?.duration) return;
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                          const seekTo = pct * selected.status.duration;
+                          sendCommand(selected.id, 'seek', { position: seekTo });
+                        }}
+                      >
                         <div
-                          className="h-full bg-violet-500/50 rounded-full"
+                          className="h-full bg-violet-500/60 rounded-full transition-[width] duration-300"
                           style={{ width: `${selected.status.duration ? (selected.status.currentTime / selected.status.duration) * 100 : 0}%` }}
+                        />
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md border-2 border-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ left: `${selected.status.duration ? (selected.status.currentTime / selected.status.duration) * 100 : 0}%`, marginLeft: '-6px' }}
                         />
                       </div>
                       <span>{formatTime(selected.status.duration)}</span>
