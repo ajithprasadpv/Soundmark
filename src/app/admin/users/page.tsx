@@ -10,6 +10,7 @@ import {
   Activity, UserCheck, UserX,
   CreditCard, DollarSign, Phone, Monitor, Headphones,
   Receipt, Banknote, FileText,
+  Tv, Plus, Wifi, WifiOff, Trash2, RefreshCw,
 } from 'lucide-react';
 import { mockAdminUsers, AdminUserProfile } from '@/lib/mock-data';
 import type { PlanType, UserRole, UserStatus, SubscriptionStatus } from '@/types';
@@ -75,6 +76,26 @@ function SubscriptionBadge({ status }: { status: SubscriptionStatus }) {
   );
 }
 
+// ─── Device type for admin panel ────────────────────────────────────
+
+interface AdminDeviceRecord {
+  id: string;
+  name: string;
+  pairingCode: string;
+  venueId: string | null;
+  organizationId: string;
+  paired: boolean;
+  online: boolean;
+  lastHeartbeat: number;
+  registeredAt: string;
+  status: {
+    isPlaying: boolean;
+    trackName: string | null;
+    genre: string | null;
+    volume: number;
+  } | null;
+}
+
 // ─── Detail Slide-Over Panel ───────────────────────────────────────
 
 function UserDetailPanel({
@@ -88,6 +109,51 @@ function UserDetailPanel({
 }) {
   const isSuspended = user.status === 'suspended';
   const canToggle = user.status === 'active' || user.status === 'suspended';
+
+  const [devices, setDevices] = useState<AdminDeviceRecord[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [showAddDevice, setShowAddDevice] = useState(false);
+  const [newDeviceName, setNewDeviceName] = useState('');
+  const [addingDevice, setAddingDevice] = useState(false);
+
+  const fetchDevices = async () => {
+    try {
+      const res = await fetch(`/api/devices?orgId=${user.organizationId}`);
+      const data = await res.json();
+      setDevices(data.devices || []);
+    } catch { /* ignore */ }
+    setDevicesLoading(false);
+  };
+
+  useEffect(() => {
+    fetchDevices();
+    const interval = setInterval(fetchDevices, 8000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.organizationId]);
+
+  const addDevice = async () => {
+    if (!newDeviceName.trim()) return;
+    setAddingDevice(true);
+    try {
+      await fetch('/api/devices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newDeviceName.trim(), organizationId: user.organizationId }),
+      });
+      setNewDeviceName('');
+      setShowAddDevice(false);
+      await fetchDevices();
+    } catch { /* ignore */ }
+    setAddingDevice(false);
+  };
+
+  const deleteDevice = async (id: string) => {
+    try {
+      await fetch(`/api/devices?id=${id}`, { method: 'DELETE' });
+      await fetchDevices();
+    } catch { /* ignore */ }
+  };
 
   return (
     <>
@@ -230,6 +296,105 @@ function UserDetailPanel({
                 <p className="text-[10px] text-muted-foreground">Play Hrs</p>
               </div>
             </div>
+          </div>
+
+          {/* Devices */}
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Devices</p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => { setDevicesLoading(true); fetchDevices(); }}
+                  className="p-1 rounded-md hover:bg-foreground/[0.06] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  title="Refresh devices"
+                >
+                  <RefreshCw className={`w-3 h-3 ${devicesLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setShowAddDevice(!showAddDevice)}
+                  className="p-1 rounded-md hover:bg-violet-500/10 text-violet-400 transition-colors cursor-pointer"
+                  title="Add device"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {showAddDevice && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Device name (e.g. Cafe TV)"
+                  value={newDeviceName}
+                  onChange={e => setNewDeviceName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addDevice()}
+                  className="flex-1 h-8 px-3 rounded-lg border border-border/60 bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                  autoFocus
+                />
+                <button
+                  onClick={addDevice}
+                  disabled={addingDevice || !newDeviceName.trim()}
+                  className="h-8 px-3 rounded-lg bg-violet-500/15 text-violet-400 text-xs font-semibold hover:bg-violet-500/25 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  {addingDevice ? '...' : 'Add'}
+                </button>
+              </div>
+            )}
+
+            {devicesLoading && devices.length === 0 ? (
+              <div className="text-center py-3">
+                <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
+            ) : devices.length === 0 ? (
+              <div className="text-center py-3">
+                <Tv className="w-5 h-5 text-muted-foreground/30 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">No devices registered</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {devices.map(dev => (
+                  <div key={dev.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-background/50 border border-border/40">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${dev.online ? 'bg-emerald-500/10' : 'bg-muted'}`}>
+                      <Tv className={`w-4 h-4 ${dev.online ? 'text-emerald-400' : 'text-muted-foreground'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">{dev.name}</p>
+                        {dev.online ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
+                            <Wifi className="w-2.5 h-2.5" /> Online
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <WifiOff className="w-2.5 h-2.5" /> Offline
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {dev.paired ? (
+                          <span className="text-[10px] text-emerald-400/80">Paired</span>
+                        ) : (
+                          <span className="text-[10px] text-amber-400">Code: <span className="font-mono font-bold">{dev.pairingCode}</span></span>
+                        )}
+                        {dev.status?.isPlaying && dev.status.trackName && (
+                          <span className="text-[10px] text-violet-400 truncate">♪ {dev.status.trackName}</span>
+                        )}
+                        {dev.venueId && (
+                          <span className="text-[10px] text-muted-foreground">Venue #{dev.venueId}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteDevice(dev.id)}
+                      className="p-1 rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
+                      title="Remove device"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Dates */}

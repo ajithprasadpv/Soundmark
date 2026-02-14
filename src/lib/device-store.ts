@@ -1,5 +1,9 @@
-// ─── In-memory device store (replace with DB in production) ─────
-// This manages Android TV box devices, their pairing, commands, and status.
+// ─── Persistent device store ──────────────────────────────────────
+// Persists devices to /tmp on Vercel so they survive across warm invocations.
+// Falls back to in-memory if /tmp is unavailable.
+
+import fs from 'fs';
+import path from 'path';
 
 export interface DeviceRecord {
   id: string;
@@ -11,9 +15,7 @@ export interface DeviceRecord {
   online: boolean;
   lastHeartbeat: number;
   registeredAt: string;
-  // Current command the device should execute
   pendingCommand: DeviceCommand | null;
-  // Last reported status from the device
   status: DeviceStatus | null;
 }
 
@@ -38,17 +40,88 @@ export interface DeviceStatus {
   updatedAt: number;
 }
 
-// ─── In-memory store ────────────────────────────────────────────
+// ─── Persistence layer ──────────────────────────────────────────
 
-const devices: Map<string, DeviceRecord> = new Map();
-const pairingCodes: Map<string, string> = new Map(); // code -> deviceId
+const STORE_PATH = path.join('/tmp', 'soundmark-devices.json');
+
+interface StoreData {
+  devices: Record<string, DeviceRecord>;
+  pairingCodes: Record<string, string>;
+}
+
+function loadStore(): StoreData {
+  try {
+    if (fs.existsSync(STORE_PATH)) {
+      const raw = fs.readFileSync(STORE_PATH, 'utf-8');
+      return JSON.parse(raw) as StoreData;
+    }
+  } catch { /* ignore corrupt file */ }
+  return { devices: {}, pairingCodes: {} };
+}
+
+function saveStore(data: StoreData): void {
+  try {
+    fs.writeFileSync(STORE_PATH, JSON.stringify(data), 'utf-8');
+  } catch { /* ignore write errors */ }
+}
+
+// ─── In-memory cache (loaded from disk on cold start) ───────────
+
+let _store: StoreData | null = null;
+
+function getStore(): StoreData {
+  if (!_store) {
+    _store = loadStore();
+    // Seed demo device if store is empty
+    if (Object.keys(_store.devices).length === 0) {
+      seedDemoDevice(_store);
+      saveStore(_store);
+    }
+  }
+  return _store;
+}
+
+function persist(): void {
+  if (_store) saveStore(_store);
+}
+
+function seedDemoDevice(store: StoreData): void {
+  const id = 'dev_demo_lobby';
+  const code = '000000';
+  store.devices[id] = {
+    id,
+    name: 'Lobby TV Box',
+    pairingCode: code,
+    venueId: '1',
+    organizationId: '1',
+    paired: true,
+    online: true,
+    lastHeartbeat: Date.now(),
+    registeredAt: new Date().toISOString(),
+    pendingCommand: null,
+    status: {
+      isPlaying: false,
+      trackName: null,
+      artistName: null,
+      albumImage: null,
+      genre: 'jazz',
+      volume: 65,
+      currentTime: 0,
+      duration: 0,
+      source: null,
+      updatedAt: Date.now(),
+    },
+  };
+  store.pairingCodes[code] = id;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────
 
 function generateId(): string {
   return `dev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function generatePairingCode(): string {
-  // 6-digit numeric code for easy TV input
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
@@ -59,6 +132,7 @@ function generateCommandId(): string {
 // ─── Public API ─────────────────────────────────────────────────
 
 export function registerDevice(name: string, organizationId: string): DeviceRecord {
+  const store = getStore();
   const id = generateId();
   const pairingCode = generatePairingCode();
 
@@ -76,50 +150,65 @@ export function registerDevice(name: string, organizationId: string): DeviceReco
     status: null,
   };
 
-  devices.set(id, device);
-  pairingCodes.set(pairingCode, id);
+  store.devices[id] = device;
+  store.pairingCodes[pairingCode] = id;
+  persist();
 
   return device;
 }
 
 export function pairDeviceByCode(code: string): DeviceRecord | null {
-  const deviceId = pairingCodes.get(code);
+  const store = getStore();
+  const deviceId = store.pairingCodes[code];
   if (!deviceId) return null;
 
-  const device = devices.get(deviceId);
+  const device = store.devices[deviceId];
   if (!device) return null;
 
   device.paired = true;
   device.online = true;
   device.lastHeartbeat = Date.now();
+  persist();
 
   return device;
 }
 
 export function getDevice(deviceId: string): DeviceRecord | null {
-  return devices.get(deviceId) || null;
+  const store = getStore();
+  return store.devices[deviceId] || null;
 }
 
 export function getDevicesByOrg(organizationId: string): DeviceRecord[] {
-  return Array.from(devices.values()).filter(d => d.organizationId === organizationId);
+  const store = getStore();
+  return Object.values(store.devices).filter(d => d.organizationId === organizationId);
+}
+
+export function getAllDevices(): DeviceRecord[] {
+  const store = getStore();
+  return Object.values(store.devices);
 }
 
 export function assignVenue(deviceId: string, venueId: string): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return false;
   device.venueId = venueId;
+  persist();
   return true;
 }
 
 export function unassignVenue(deviceId: string): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return false;
   device.venueId = null;
+  persist();
   return true;
 }
 
 export function sendCommand(deviceId: string, type: DeviceCommand['type'], payload: Record<string, unknown> = {}): DeviceCommand | null {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device || !device.paired) return null;
 
   const command: DeviceCommand = {
@@ -131,11 +220,13 @@ export function sendCommand(deviceId: string, type: DeviceCommand['type'], paylo
   };
 
   device.pendingCommand = command;
+  persist();
   return command;
 }
 
 export function pollCommand(deviceId: string): DeviceCommand | null {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return null;
 
   const cmd = device.pendingCommand;
@@ -146,66 +237,58 @@ export function pollCommand(deviceId: string): DeviceCommand | null {
 }
 
 export function acknowledgeCommand(deviceId: string, commandId: string): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device || !device.pendingCommand) return false;
   if (device.pendingCommand.id === commandId) {
     device.pendingCommand.acknowledged = true;
+    persist();
     return true;
   }
   return false;
 }
 
 export function updateDeviceStatus(deviceId: string, status: DeviceStatus): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return false;
   device.status = status;
   device.online = true;
   device.lastHeartbeat = Date.now();
+  persist();
   return true;
 }
 
 export function heartbeat(deviceId: string): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return false;
   device.online = true;
   device.lastHeartbeat = Date.now();
+  persist();
   return true;
 }
 
 export function removeDevice(deviceId: string): boolean {
-  const device = devices.get(deviceId);
+  const store = getStore();
+  const device = store.devices[deviceId];
   if (!device) return false;
-  pairingCodes.delete(device.pairingCode);
-  devices.delete(deviceId);
+  delete store.pairingCodes[device.pairingCode];
+  delete store.devices[deviceId];
+  persist();
   return true;
 }
 
 // Mark devices offline if no heartbeat in 60 seconds
 export function cleanupStaleDevices() {
+  const store = getStore();
   const now = Date.now();
-  devices.forEach(device => {
+  let changed = false;
+  Object.values(store.devices).forEach(device => {
     if (device.online && device.lastHeartbeat > 0 && now - device.lastHeartbeat > 60_000) {
       device.online = false;
+      changed = true;
     }
   });
+  if (changed) persist();
 }
-
-// ─── Seed demo device ───────────────────────────────────────────
-
-const demoDevice = registerDevice('Lobby TV Box', '1');
-demoDevice.paired = true;
-demoDevice.online = true;
-demoDevice.venueId = '1';
-demoDevice.lastHeartbeat = Date.now();
-demoDevice.status = {
-  isPlaying: false,
-  trackName: null,
-  artistName: null,
-  albumImage: null,
-  genre: 'jazz',
-  volume: 65,
-  currentTime: 0,
-  duration: 0,
-  source: null,
-  updatedAt: Date.now(),
-};

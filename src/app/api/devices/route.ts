@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   registerDevice,
   getDevicesByOrg,
+  getAllDevices,
   removeDevice,
   assignVenue,
   unassignVenue,
@@ -9,11 +10,11 @@ import {
   cleanupStaleDevices,
 } from '@/lib/device-store';
 
-// GET /api/devices?orgId=1 — list all devices for an organization
+// GET /api/devices?orgId=1 — list devices for an org, or all if orgId=all
 export async function GET(req: NextRequest) {
   cleanupStaleDevices();
-  const orgId = req.nextUrl.searchParams.get('orgId') || '1';
-  const devices = getDevicesByOrg(orgId);
+  const orgId = req.nextUrl.searchParams.get('orgId');
+  const devices = orgId === 'all' ? getAllDevices() : getDevicesByOrg(orgId || '1');
   return NextResponse.json({ devices });
 }
 
