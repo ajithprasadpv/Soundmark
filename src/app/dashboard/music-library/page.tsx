@@ -149,7 +149,8 @@ export default function MusicLibraryPage() {
       return;
     }
     stopS3Playback();
-    const el = new Audio(track.streamUrl);
+    const proxyUrl = `/api/music/stream/${encodeURIComponent(track.key)}`;
+    const el = new Audio(proxyUrl);
     el.volume = s3Volume;
     el.muted = s3Muted;
     el.onloadedmetadata = () => setS3Duration(el.duration);

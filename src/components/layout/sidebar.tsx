@@ -32,6 +32,7 @@ import {
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/venues', label: 'Venues', icon: MapPin },
+  { href: '/dashboard/copyrighted-music', label: 'Copyrighted Music', icon: Shield },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/schedules', label: 'Schedules', icon: Calendar },
   { href: '/dashboard/environment', label: 'Environment', icon: Thermometer },

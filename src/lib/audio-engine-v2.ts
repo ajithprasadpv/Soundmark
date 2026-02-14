@@ -43,15 +43,11 @@ class VenuePlayer {
     let tracks: MusicTrackResult[];
 
     if (this.musicSource === 's3') {
-      // Fetch copyrighted tracks from S3 library
-      tracks = await fetchS3Tracks(this.genre, 20);
+      // Fetch all copyrighted tracks from S3 library (no genre filter — library is small)
+      console.log('[Soundmark] Fetching S3 copyrighted tracks...');
+      tracks = await fetchS3Tracks('', 100);
+      console.log(`[Soundmark] Got ${tracks.length} S3 tracks`);
       if (this.destroyed) return;
-
-      if (tracks.length === 0) {
-        // Fallback: fetch all S3 tracks regardless of genre
-        tracks = await fetchS3Tracks('', 50);
-        if (this.destroyed) return;
-      }
     } else {
       // Fetch copyright-free tracks from Jamendo + ccMixter
       tracks = await fetchJamendoTracks(this.genre, 10, Math.floor(Math.random() * 20));
