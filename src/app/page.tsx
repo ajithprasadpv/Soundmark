@@ -75,12 +75,12 @@ export default function LandingPage() {
           </p>
 
           <div className="flex items-center justify-center gap-4">
-            <Link href="/dashboard">
+            <Link href="/auth/signin">
               <Button size="lg" className="text-base px-8 h-13 shadow-lg shadow-primary/30">
                 Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/demo">
               <Button variant="outline" size="lg" className="text-base px-8 h-13">
                 View Demo
               </Button>
