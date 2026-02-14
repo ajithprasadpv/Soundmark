@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useAppState } from '@/lib/store';
 import {
   Tv, Plus, X, Wifi, WifiOff, Play, Pause, SkipForward, SkipBack,
-  Volume2, Music, MapPin, Trash2, Link, Unlink, RefreshCw, Copy, Check,
+  Volume2, Music, MapPin, Trash2, Link, Unlink, RefreshCw, Copy, Check, Shield,
 } from 'lucide-react';
 
 interface DeviceRecord {
@@ -57,6 +57,7 @@ export default function DevicesPage() {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deviceMusicSource, setDeviceMusicSource] = useState<Record<string, 'jamendo' | 's3'>>({});
 
   // Read user's org + role from JWT
   const token = typeof window !== 'undefined' ? localStorage.getItem('soundmark_token') : null;
@@ -370,7 +371,7 @@ export default function DevicesPage() {
                         <Button
                           size="icon"
                           className="w-11 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-foreground/10"
-                          onClick={() => sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient' })}
+                          onClick={() => sendCommand(selected.id, 'play', { genre: selected.status?.genre || 'ambient', musicSource: deviceMusicSource[selected.id] || 'jamendo' })}
                         >
                           <Play className="w-5 h-5 ml-0.5" />
                         </Button>
@@ -378,6 +379,35 @@ export default function DevicesPage() {
                       <Button variant="ghost" size="icon" className="w-9 h-9 rounded-xl" onClick={() => sendCommand(selected.id, 'skip_next')}>
                         <SkipForward className="w-4 h-4 text-muted-foreground" />
                       </Button>
+                    </div>
+
+                    {/* Music Source Selector */}
+                    <div className="mt-3">
+                      <p className="text-[10px] text-muted-foreground/50 mb-1.5 font-medium">Music Source</p>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 'jamendo' }))}
+                          className={`flex-1 px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                            (deviceMusicSource[selected.id] || 'jamendo') === 'jamendo'
+                              ? 'bg-violet-500/10 border-violet-500/40 text-violet-400'
+                              : 'bg-foreground/[0.02] border-border text-muted-foreground/60 hover:bg-foreground/[0.04]'
+                          }`}
+                        >
+                          <Shield className="w-3 h-3 inline mr-1 -mt-0.5" />
+                          Copyright-Free
+                        </button>
+                        <button
+                          onClick={() => setDeviceMusicSource(prev => ({ ...prev, [selected.id]: 's3' }))}
+                          className={`flex-1 px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                            deviceMusicSource[selected.id] === 's3'
+                              ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                              : 'bg-foreground/[0.02] border-border text-muted-foreground/60 hover:bg-foreground/[0.04]'
+                          }`}
+                        >
+                          <Music className="w-3 h-3 inline mr-1 -mt-0.5" />
+                          Copyrighted
+                        </button>
+                      </div>
                     </div>
 
                     {/* Volume */}
