@@ -86,12 +86,13 @@ function persist(): void {
 }
 
 function seedDemoDevice(store: StoreData): void {
-  const id = 'dev_demo_lobby';
-  const code = '000000';
-  store.devices[id] = {
-    id,
+  // Lobby TV Box — always present for demo org 1
+  const id1 = 'dev_demo_lobby';
+  const code1 = '000000';
+  store.devices[id1] = {
+    id: id1,
     name: 'Lobby TV Box',
-    pairingCode: code,
+    pairingCode: code1,
     venueId: '1',
     organizationId: '1',
     paired: true,
@@ -112,7 +113,36 @@ function seedDemoDevice(store: StoreData): void {
       updatedAt: Date.now(),
     },
   };
-  store.pairingCodes[code] = id;
+  store.pairingCodes[code1] = id1;
+
+  // Android TV Box — permanent device for demo org 1
+  const id2 = 'dev_android_tv';
+  const code2 = '111111';
+  store.devices[id2] = {
+    id: id2,
+    name: 'Android TV Box',
+    pairingCode: code2,
+    venueId: '1',
+    organizationId: '1',
+    paired: true,
+    online: true,
+    lastHeartbeat: Date.now(),
+    registeredAt: new Date().toISOString(),
+    pendingCommand: null,
+    status: {
+      isPlaying: false,
+      trackName: null,
+      artistName: null,
+      albumImage: null,
+      genre: 'ambient',
+      volume: 65,
+      currentTime: 0,
+      duration: 0,
+      source: null,
+      updatedAt: Date.now(),
+    },
+  };
+  store.pairingCodes[code2] = id2;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────

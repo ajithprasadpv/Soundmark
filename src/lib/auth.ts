@@ -14,9 +14,9 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function generateAccessToken(user: { id: string; email: string; role: UserRole }): string {
+export function generateAccessToken(user: { id: string; email: string; role: UserRole; organizationId?: string }): string {
   return jwt.sign(
-    { userId: user.id, email: user.email, role: user.role },
+    { userId: user.id, email: user.email, role: user.role, organizationId: user.organizationId || '1' },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRY }
   );
@@ -30,9 +30,9 @@ export function generateRefreshToken(user: { id: string }): string {
   );
 }
 
-export function verifyToken(token: string): { userId: string; email: string; role: UserRole } | null {
+export function verifyToken(token: string): { userId: string; email: string; role: UserRole; organizationId: string } | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: UserRole };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: UserRole; organizationId: string };
     return decoded;
   } catch {
     return null;

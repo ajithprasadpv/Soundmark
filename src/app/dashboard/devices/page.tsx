@@ -37,6 +37,17 @@ interface DeviceRecord {
   } | null;
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
+
 export default function DevicesPage() {
   const { state } = useAppState();
   const { venues } = state;
@@ -47,15 +58,23 @@ export default function DevicesPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Read user's org + role from JWT
+  const token = typeof window !== 'undefined' ? localStorage.getItem('soundmark_token') : null;
+  const decoded = token ? decodeJwtPayload(token) : null;
+  const userOrgId = (decoded?.organizationId as string) || '1';
+  const userRole = (decoded?.role as string) || 'owner';
+  const isSuperAdmin = userRole === 'super_admin';
+
   const fetchDevices = useCallback(async () => {
     try {
-      const res = await fetch('/api/devices?orgId=1');
+      const orgParam = isSuperAdmin ? 'all' : userOrgId;
+      const res = await fetch(`/api/devices?orgId=${orgParam}`);
       const data = await res.json();
       setDevices(data.devices || []);
     } catch (e) {
       console.error('Failed to fetch devices:', e);
     }
-  }, []);
+  }, [isSuperAdmin, userOrgId]);
 
   useEffect(() => {
     fetchDevices();
@@ -70,7 +89,7 @@ export default function DevicesPage() {
       await fetch('/api/devices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim(), organizationId: '1' }),
+        body: JSON.stringify({ name: newName.trim(), organizationId: userOrgId }),
       });
       setNewName('');
       setShowCreate(false);
