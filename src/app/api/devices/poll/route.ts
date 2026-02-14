@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  registerDevice,
   pairDeviceByCode,
   pollCommand,
   acknowledgeCommand,
@@ -13,6 +14,17 @@ import {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
+
+  // ─── Self-register from TV box ─────────────────────────────
+  if (action === 'register') {
+    const { name, organizationId } = body;
+    const device = registerDevice(name || 'Android TV Box', organizationId || '1');
+    return NextResponse.json({
+      deviceId: device.id,
+      pairingCode: device.pairingCode,
+      name: device.name,
+    });
+  }
 
   // ─── Pair by code ───────────────────────────────────────────
   if (action === 'pair') {
