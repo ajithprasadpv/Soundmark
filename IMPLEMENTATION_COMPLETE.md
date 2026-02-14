@@ -79,7 +79,18 @@ VerificationToken (Email verification)
 
 ## 📋 Next Steps for You
 
-### 1. Set Up Google OAuth (Required)
+### 1. Set Up Google OAuth (Required) - Choose One Option:
+
+**Option A: Firebase (Recommended - FREE & Simpler)**
+
+Follow the guide in `FIREBASE_WITH_NEXTAUTH.md`:
+
+1. Create Firebase project (5 minutes)
+2. Enable Google authentication
+3. Get OAuth credentials from Firebase
+4. Add to `.env.local` - **No code changes needed!**
+
+**Option B: Google Cloud Console (Advanced)**
 
 Follow the guide in `GOOGLE_OAUTH_SETUP.md`:
 
@@ -87,9 +98,9 @@ Follow the guide in `GOOGLE_OAUTH_SETUP.md`:
 2. Enable Google+ API and People API
 3. Configure OAuth consent screen
 4. Create OAuth 2.0 credentials
-5. Add redirect URIs:
-   - Local: `http://localhost:3000/api/auth/callback/google`
-   - Production: `https://soundmark.vercel.app/api/auth/callback/google`
+5. Add redirect URIs
+
+**Recommendation**: Use Firebase - it's free, simpler, and requires no code changes.
 
 ### 2. Set Up Vercel Postgres (Required)
 
