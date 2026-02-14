@@ -388,6 +388,15 @@ export const mockVenues: Venue[] = [
     createdAt: '2026-01-20T10:00:00Z', updatedAt: '2026-02-11T08:00:00Z',
     configuration: { id: 'c8', venueId: '8', preferredGenres: ['indie', 'folk', 'chill'], tempoRange: { min: 80, max: 115 }, valenceRange: { min: 0.5, max: 0.75 }, energyRange: { min: 0.3, max: 0.55 }, volumeLevel: 28 },
   },
+  {
+    id: '9', organizationId: '1',
+    name: 'Copyrighted Music',
+    venueType: 'lounge',
+    address: 'S3 Library', city: 'Cloud', state: '', country: '',
+    timezone: 'UTC', status: 'active',
+    createdAt: '2026-02-14T10:00:00Z', updatedAt: '2026-02-14T10:00:00Z',
+    configuration: { id: 'c9', venueId: '9', preferredGenres: ['bollywood', 'pop', 'jazz', 'lounge', 'ambient'], tempoRange: { min: 60, max: 140 }, valenceRange: { min: 0.3, max: 0.8 }, energyRange: { min: 0.2, max: 0.8 }, volumeLevel: 55, musicSource: 's3' },
+  },
 ];
 
 // ─── Recently Played Tracks (per-venue last-played) ─────────────
@@ -414,6 +423,7 @@ export const mockPlaybackStates: Record<string, PlaybackState> = {
   '6': { venueId: '6', isPlaying: false, currentTrack: mockTracks[2], volume: 30 },
   '7': { venueId: '7', isPlaying: false, currentTrack: mockTracks[4], volume: 25 },
   '8': { venueId: '8', isPlaying: false, currentTrack: mockTracks[3], volume: 28 },
+  '9': { venueId: '9', isPlaying: false, volume: 55 },
 };
 
 // ─── Environment Data (real-time sensor snapshot) ───────────────

@@ -43,6 +43,8 @@ export interface Venue {
   configuration?: VenueConfiguration;
 }
 
+export type MusicSourceType = 'jamendo' | 's3';
+
 export interface VenueConfiguration {
   id: string;
   venueId: string;
@@ -51,6 +53,7 @@ export interface VenueConfiguration {
   valenceRange: { min: number; max: number };
   energyRange: { min: number; max: number };
   volumeLevel: number;
+  musicSource?: MusicSourceType;
 }
 
 export interface PlaybackState {

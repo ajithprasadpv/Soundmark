@@ -1,6 +1,7 @@
 'use client';
 
-import { fetchJamendoTracks, MusicTrackResult } from './jamendo';
+import { fetchJamendoTracks, fetchS3Tracks, MusicTrackResult } from './jamendo';
+import type { MusicSourceType } from '@/types';
 
 export interface NowPlayingInfo {
   trackName: string;
@@ -22,34 +23,48 @@ class VenuePlayer {
   private genre: string;
   private volume: number;
   private venueId: string;
+  private musicSource: MusicSourceType;
   private onUpdate: (info: NowPlayingInfo | null) => void;
   private loading = false;
   private destroyed = false;
 
-  constructor(venueId: string, genre: string, volume: number, onUpdate: (info: NowPlayingInfo | null) => void) {
+  constructor(venueId: string, genre: string, volume: number, onUpdate: (info: NowPlayingInfo | null) => void, musicSource: MusicSourceType = 'jamendo') {
     this.venueId = venueId;
     this.genre = genre;
     this.volume = volume / 100;
     this.onUpdate = onUpdate;
+    this.musicSource = musicSource;
   }
 
   async start() {
     if (this.destroyed) return;
     this.loading = true;
 
-    // Fetch tracks from all active sources (Jamendo + ccMixter)
-    const tracks = await fetchJamendoTracks(this.genre, 10, Math.floor(Math.random() * 20));
-    if (this.destroyed) return;
+    let tracks: MusicTrackResult[];
 
-    if (tracks.length === 0) {
-      // Fallback: try a broader search
-      const fallback = await fetchJamendoTracks('ambient', 10);
+    if (this.musicSource === 's3') {
+      // Fetch copyrighted tracks from S3 library
+      tracks = await fetchS3Tracks(this.genre, 20);
       if (this.destroyed) return;
-      this.playlist = fallback;
+
+      if (tracks.length === 0) {
+        // Fallback: fetch all S3 tracks regardless of genre
+        tracks = await fetchS3Tracks('', 50);
+        if (this.destroyed) return;
+      }
     } else {
-      this.playlist = tracks;
+      // Fetch copyright-free tracks from Jamendo + ccMixter
+      tracks = await fetchJamendoTracks(this.genre, 10, Math.floor(Math.random() * 20));
+      if (this.destroyed) return;
+
+      if (tracks.length === 0) {
+        const fallback = await fetchJamendoTracks('ambient', 10);
+        if (this.destroyed) return;
+        tracks = fallback;
+      }
     }
 
+    this.playlist = tracks;
     this.loading = false;
 
     if (this.playlist.length > 0) {
@@ -215,11 +230,11 @@ export class SoundmarkAudioEngine {
     });
   }
 
-  startVenue(venueId: string, genre: string, volume: number) {
+  startVenue(venueId: string, genre: string, volume: number, musicSource: MusicSourceType = 'jamendo') {
     this.stopVenue(venueId);
     const player = new VenuePlayer(venueId, genre, volume, (info) => {
       this.notifyListeners(venueId, info);
-    });
+    }, musicSource);
     this.players.set(venueId, player);
     player.start();
   }

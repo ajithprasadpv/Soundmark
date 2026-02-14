@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { useAppState } from '@/lib/store';
-import { Venue, VenueType, VenueStatus } from '@/types';
+import { Venue, VenueType, VenueStatus, MusicSourceType } from '@/types';
 import {
   MapPin, Plus, Play, Pause, Volume2, Settings2, X,
-  Music, Thermometer, Users, ChevronRight, Trash2,
+  Music, Thermometer, Users, ChevronRight, Trash2, Shield,
 } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
 
@@ -30,6 +30,7 @@ export default function VenuesPage() {
   const [newVenue, setNewVenue] = useState({
     name: '', venueType: 'restaurant' as VenueType, address: '', city: '', state: '', country: 'US',
     genres: [] as string[], tempoMin: 70, tempoMax: 120, energyMin: 0.3, energyMax: 0.7, volumeLevel: 50,
+    musicSource: 'jamendo' as MusicSourceType,
   });
 
   const filteredVenues = filter === 'all' ? venues : venues.filter(v => v.status === filter);
@@ -56,11 +57,12 @@ export default function VenuesPage() {
         valenceRange: { min: 0.3, max: 0.7 },
         energyRange: { min: newVenue.energyMin, max: newVenue.energyMax },
         volumeLevel: newVenue.volumeLevel,
+        musicSource: newVenue.musicSource,
       },
     };
     dispatch({ type: 'ADD_VENUE', payload: venue });
     setShowCreate(false);
-    setNewVenue({ name: '', venueType: 'restaurant', address: '', city: '', state: '', country: 'US', genres: [], tempoMin: 70, tempoMax: 120, energyMin: 0.3, energyMax: 0.7, volumeLevel: 50 });
+    setNewVenue({ name: '', venueType: 'restaurant', address: '', city: '', state: '', country: 'US', genres: [], tempoMin: 70, tempoMax: 120, energyMin: 0.3, energyMax: 0.7, volumeLevel: 50, musicSource: 'jamendo' });
   };
 
   const togglePlayback = (venueId: string) => {
@@ -83,7 +85,8 @@ export default function VenuesPage() {
       const venue = venues.find(v => v.id === venueId);
       if (willPlay && venue) {
         const genre = venue.configuration?.preferredGenres[0] || 'ambient';
-        audio.startPlayback(venueId, genre, current.volume);
+        const musicSource = venue.configuration?.musicSource || 'jamendo';
+        audio.startPlayback(venueId, genre, current.volume, musicSource);
       } else {
         audio.stopPlayback(venueId);
       }
@@ -189,6 +192,10 @@ export default function VenuesPage() {
                       <p className="text-sm text-muted-foreground/60">{venue.address}, {venue.city}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground/50">
                         <span className="flex items-center gap-1"><Music className="w-3 h-3" /> {venue.configuration?.preferredGenres.slice(0, 2).join(', ')}</span>
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          {venue.configuration?.musicSource === 's3' ? 'Copyrighted' : 'Copyright-Free'}
+                        </span>
                         {env && <span className="flex items-center gap-1"><Thermometer className="w-3 h-3" /> {env.temperature}°C</span>}
                         {env && <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {env.crowdDensity}%</span>}
                       </div>
@@ -241,6 +248,14 @@ export default function VenuesPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-1">{selected.name}</h4>
                   <p className="text-xs text-muted-foreground capitalize">{selected.venueType} • {selected.city}, {selected.state}</p>
+                </div>
+
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
+                  <Shield className="w-4 h-4 text-violet-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Music Source</p>
+                    <p className="text-sm font-medium">{selected.configuration?.musicSource === 's3' ? 'Copyrighted (S3 Library)' : 'Copyright-Free (Jamendo)'}</p>
+                  </div>
                 </div>
 
                 <div>
@@ -317,6 +332,36 @@ export default function VenuesPage() {
                 <div>
                   <label htmlFor="venue-state" className="text-sm font-medium">State</label>
                   <Input id="venue-state" value={newVenue.state} onChange={e => setNewVenue({ ...newVenue, state: e.target.value })} />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Music Source</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNewVenue({ ...newVenue, musicSource: 'jamendo' })}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border ${
+                      newVenue.musicSource === 'jamendo'
+                        ? 'bg-violet-500/10 border-violet-500/40 text-violet-400'
+                        : 'bg-foreground/[0.02] border-border text-muted-foreground hover:bg-foreground/[0.04]'
+                    }`}
+                  >
+                    <Shield className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    Copyright-Free
+                    <span className="block text-[10px] opacity-60 mt-0.5">Jamendo + ccMixter</span>
+                  </button>
+                  <button
+                    onClick={() => setNewVenue({ ...newVenue, musicSource: 's3' })}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border ${
+                      newVenue.musicSource === 's3'
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                        : 'bg-foreground/[0.02] border-border text-muted-foreground hover:bg-foreground/[0.04]'
+                    }`}
+                  >
+                    <Music className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    Copyrighted
+                    <span className="block text-[10px] opacity-60 mt-0.5">S3 Library</span>
+                  </button>
                 </div>
               </div>
 

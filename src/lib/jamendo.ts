@@ -168,6 +168,40 @@ export async function fetchMultipleGenres(
   return results;
 }
 
+// ─── S3 Copyrighted Music ──────────────────────────────────────
+
+export async function fetchS3Tracks(
+  genre: string,
+  limit: number = 20,
+): Promise<MusicTrackResult[]> {
+  try {
+    const params = new URLSearchParams();
+    if (genre) params.set('genre', genre);
+    params.set('limit', String(limit));
+
+    const res = await fetch(`/api/music/library?${params.toString()}`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    const tracks = json.data?.tracks || [];
+
+    return tracks.map((t: { key: string; filename: string; genre: string; language: string; streamUrl: string; size: number }) => ({
+      id: `s3-${t.key}`,
+      name: t.filename.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' '),
+      duration: 0,
+      artist_name: t.language ? t.language.charAt(0).toUpperCase() + t.language.slice(1) : 'Unknown',
+      album_name: t.genre || 'S3 Library',
+      album_image: '',
+      audio: t.streamUrl,
+      image: '',
+      shareurl: '',
+      source: 'S3 Library',
+    }));
+  } catch (err) {
+    console.error('S3 library fetch error:', err);
+    return [];
+  }
+}
+
 export async function fetchFeaturedTracks(limit: number = 20): Promise<MusicTrackResult[]> {
   const url = `/api/music/jamendo?featured=1&limit=${limit}`;
 

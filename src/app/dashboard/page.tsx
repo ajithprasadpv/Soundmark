@@ -347,7 +347,8 @@ export default function DashboardPage() {
       const venue = venues.find(v => v.id === venueId);
       if (willPlay && venue) {
         const genre = venue.configuration?.preferredGenres[0] || 'ambient';
-        audio.startPlayback(venueId, genre, current.volume);
+        const musicSource = venue.configuration?.musicSource || 'jamendo';
+        audio.startPlayback(venueId, genre, current.volume, musicSource);
       } else {
         audio.stopPlayback(venueId);
       }

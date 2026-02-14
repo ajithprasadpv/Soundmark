@@ -30,8 +30,8 @@ export function useAudio() {
 
   const getEngine = useCallback(() => engineRef.current || getAudioEngine(), []);
 
-  const startPlayback = useCallback((venueId: string, genre: string, volume: number) => {
-    getEngine().startVenue(venueId, genre, volume);
+  const startPlayback = useCallback((venueId: string, genre: string, volume: number, musicSource?: 'jamendo' | 's3') => {
+    getEngine().startVenue(venueId, genre, volume, musicSource || 'jamendo');
   }, [getEngine]);
 
   const stopPlayback = useCallback((venueId: string) => {
